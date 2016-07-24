@@ -17,6 +17,7 @@
     this.all.push(name);
   };
 
+  // TODO: set param to ID instead of name to prevent misfunction with lists of same name
   TodoApp.prototype.removeList = function(name) {
     for (var i=0;i<this.all.length;i++) {
       if(this.all[i].name == name) {
@@ -26,13 +27,26 @@
     this.renderApp();
   };
 
-  TodoApp.prototype.completeTask = function() {
-    // TODO: Make this function dynamic
-    this.all[0].items[1].isCompleted = true;
-  };
-
   TodoApp.prototype.addItem = function(item, list) {
     this.all[list].items.push(new TodoItem(item));
+  };
+
+  TodoApp.prototype.completeTask = function(id) {
+    // TODO: Make this function dynamic
+    for(var i=0;i<this.all.length;i++) {
+      for (var j=0;j<this.all[i].items.length;j++) {
+        if(this.all[i].items[j].ID === id) {
+          this.all[i].items[j].isCompleted = true;
+        }
+      }
+    }
+  };
+
+  TodoApp.prototype.listEventListener = function(index, element) {
+    var catchThis = this;
+    element[index].addEventListener('click', function() {
+      catchThis.removeList(this.innerText);
+    });
   };
 
   TodoApp.prototype.listController = function() {
@@ -50,28 +64,39 @@
       });
       this.addListEventIsSet = true;
     }
-    var categorieListItem = document.getElementsByClassName('todo-list-category-name');
-    for(var i=0;i<categorieListItem.length;i++) {
-      categorieListItem[i].addEventListener('click', function() {
-        catchThis.removeList(this.innerText);
-      });
+    var categoriesListItem = document.getElementsByClassName('todo-list-category-name');
+    for(var i=0;i<categoriesListItem.length;i++) {
+      catchThis.listEventListener(i, categoriesListItem);
     }
+  };
+
+  TodoApp.prototype.addButtonEventListener = function(counter, buttons) {
+      var catchThis = this;
+      buttons[counter].addEventListener('click', function(e) {
+        e.preventDefault(e);
+        var getItem = prompt('What task do you like to accomplish?');
+        if(getItem) {
+          catchThis.addItem(getItem, counter);
+          catchThis.renderApp();
+        }
+      });
+  };
+
+  TodoApp.prototype.completeItemEventListener = function(index, elements) {
+    elements[index].addEventListener('click', function() {
+      this.classList.toggle('is-completed');
+    });
   };
 
   TodoApp.prototype.itemController = function() {
     var buttons = document.getElementsByClassName('add-item');
     var catchThis = this;
     for (var i=0;i<buttons.length;i++) {
-      (function(index) {
-        buttons[index].addEventListener('click', function(e) {
-          e.preventDefault(e);
-          var getItem = prompt('What task do you like to accomplish?');
-          if(getItem) {
-            catchThis.addItem(getItem, index);
-            catchThis.renderApp();
-          }
-        });
-      })(i);
+      catchThis.addButtonEventListener(i, buttons);
+    }
+    var items = document.getElementsByClassName('todo-item');
+    for(var j=0;j<items.length;j++) {
+      catchThis.completeItemEventListener(j, items);
     }
   };
 
@@ -103,16 +128,17 @@
       var list = '<h2>' + this.all[i].name + '</h2>';
       list += '<ul class="todo-list">';
       for (var j=0;j<this.all[i].items.length;j++) {
-        list += '<li';
+        list += '<li class="todo-item';
         if(this.all[i].items[j].isCompleted === true) {
-          list += ' class="is-completed"';
+          list += ' is-completed';
         } 
-        list += '>' + this.all[i].items[j].name + '</li>';
+        list += '"">' + this.all[i].items[j].name + '</li>';
       }
       list += '</ul>';
       list += '<a class="add-item" href="#">+ Add Item</a>';
       listBlock.innerHTML += list;
     }
+
     this.itemController();
   };
 
@@ -136,9 +162,13 @@
   // TODO ITEM CONSTRUCTOR
   // ===========================================
 
+  var IdCounter = 0;
+
   function TodoItem(name) {
     this.name = name;
     this.isCompleted = false;
+    this.ID = IdCounter;
+    IdCounter++;
   }
 
 
@@ -167,11 +197,11 @@
   work.addItem('Finish yearly report');
   work.addItem('Contact Marketing Team');
 
-  var counter = 0;
-  while(counter<55) {
-    travel.addItem('Destination');
-    counter++;
-  }
+  // var counter = 0;
+  // while(counter<55) {
+  //   travel.addItem('Destination');
+  //   counter++;
+  // }
 
 
   var app = new TodoApp();
@@ -180,7 +210,6 @@
   app.addList(groceries);
   app.addList(travel);
 
-  app.completeTask();
   app.renderApp();
 
 

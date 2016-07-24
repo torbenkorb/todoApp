@@ -78,6 +78,7 @@ main {
   float: right;
   margin: 0;
   padding: 26px 36px 36px;
+  min-height: 30vh;
   max-height: 80vh;
   overflow-y: scroll;
 }
@@ -89,6 +90,7 @@ main h2 {
 #categories {
   list-style-type: none;
   margin: 12px 0;
+  overflow: hidden;
 }
 
 #categories li {
@@ -164,6 +166,7 @@ main h2 {
   top: 13px;
   line-height: 20px;
   text-align: center;
+  cursor: pointer;
 }
 
 .todo-list li.is-completed {
