@@ -1,218 +1,203 @@
 (function() {
+    'use strict';
 
-  'use strict';
+    var TodoApp = {};
 
-  console.log('App is live!');
+    var TodoListElement = document.getElementById('TodoList');
 
-  // ===========================================
-  // APP CONSTRUCTOR
-  // ===========================================
-
-  function TodoApp() {
-    this.all = [];
-    this.addListEventIsSet = false;
-  }
-
-  TodoApp.prototype.addList = function(name) {
-    this.all.push(name);
-  };
-
-  // TODO: set param to ID instead of name to prevent misfunction with lists of same name
-  TodoApp.prototype.removeList = function(name) {
-    for (var i=0;i<this.all.length;i++) {
-      if(this.all[i].name == name) {
-        this.all.splice(i, 1);
-      }
-    }
-    this.renderApp();
-  };
-
-  TodoApp.prototype.addItem = function(item, list) {
-    this.all[list].items.push(new TodoItem(item));
-  };
-
-  TodoApp.prototype.completeTask = function(id) {
-    // TODO: Make this function dynamic
-    for(var i=0;i<this.all.length;i++) {
-      for (var j=0;j<this.all[i].items.length;j++) {
-        if(this.all[i].items[j].ID === id) {
-          this.all[i].items[j].isCompleted = true;
+    function addTask(task) {
+        var id = TodoApp.nextTodoId;
+        var taskObject = {
+            id: id,
+            name: task,
+            completed: false,
+            created: Date.now()
         }
-      }
+        TodoApp.todos[id] = taskObject;
+        TodoApp.nextTodoId++;
     }
-  };
 
-  TodoApp.prototype.listEventListener = function(index, element) {
-    var catchThis = this;
-    element[index].addEventListener('click', function() {
-      catchThis.removeList(this.innerText);
-    });
-  };
+    function updateTask(id, task) {
+        TodoApp.todos[id].name = task;
+    }
 
-  TodoApp.prototype.listController = function() {
-    var catchThis = this;
-    var addListButton = document.getElementById('add-list');
-    if(this.addListEventIsSet === false) {
-      addListButton.addEventListener('click', function(e) {
+    function removeTask(id) {
+        delete TodoApp.todos[id];
+    }
+
+    function toggleTask(id) {
+        TodoApp.todos[id].completed = !TodoApp.todos[id].completed;
+    }
+
+    function updateStore() {
+        localStorage.setItem('TodoApp', JSON.stringify(TodoApp));
+    }
+
+    function renderTaskList() {
+        var collection;
+        var html = '<ul>';
+        var visibilityClass = 'show-all';
+        var todosAsArray = Object.values(TodoApp.todos);
+        var total = todosAsArray.length;
+        var activeItems = todosAsArray.filter(function(item) { return item.completed === false });
+        var completeItems = todosAsArray.filter(function(item) { return item.completed === true });
+        var stats = activeItems.length + ' items left';
+        var filterContainer = document.getElementById('filter');
+
+        updateStore();
+
+        switch(TodoApp.visibilityFilter) {
+            case 'SHOW_COMPLETED':
+                collection = completeItems;
+                visibilityClass = 'show-completed';
+                break;
+            case 'SHOW_ACTIVE':
+                collection = activeItems;
+                visibilityClass = 'show-active';
+                break;
+            default:
+                collection = todosAsArray;
+                collection.sort(function(a,b) {
+                    if(a.completed != b.completed) {
+                        return a.completed - b.completed;
+                    } else {
+                        return a.id - b.id;
+                    }
+                });
+                break;
+        }
+
+        collection.forEach(function(item) {
+            html += '<li id="item_' + item.id + '">';
+            html += '<input class="checkbox" type="checkbox" id="ID_' + item.id + '"';
+            if(item.completed) {
+                html += ' checked';
+            }
+            html += '><label for="ID_' + item.id + '">';
+            html += '<span class="content">';
+            html += item.name;
+            html += '</span>';
+            html += '</label><div class="remove-item">&times;</div>';
+            html += '</li>';
+        });
+        html += '</ul>';
+        TodoListElement.innerHTML = html;
+
+
+        if(activeItems.length === 0) {
+            if(completeItems.length > 0) {
+                stats = 'Congratulations! All Tasks completed!';
+            } else {
+                stats = 'Start Your Productivity! Add some tasks now.';
+            }
+        }
+        document.getElementById('items-left').innerHTML = stats;
+
+        filterContainer.classList.remove('show-all', 'show-completed', 'show-active');
+        filterContainer.classList.add(visibilityClass);
+
+
+    }
+
+    function storageAvailable(type) {
+        try {
+            var storage = window[type],
+                x = '__storage_test__';
+            storage.setItem(x, x);
+            storage.removeItem(x);
+            return true;
+        }
+        catch(e) {
+            return false;
+        }
+    }
+
+    document.getElementById('get-value').addEventListener('submit', function(e) {
         e.preventDefault();
-        var listInput = prompt("What's the name of your list?");
-        if(listInput) {
-          var newList = new TodoList(listInput);
-          catchThis.addList(newList);
-          catchThis.renderApp();
+        var inputField = document.getElementById('input-field');
+        var userInput = inputField.value;
+        if(userInput) {
+            addTask(userInput);
+            inputField.value = '';
+            renderTaskList();
         }
-      });
-      this.addListEventIsSet = true;
-    }
-    var categoriesListItem = document.getElementsByClassName('todo-list-category-name');
-    for(var i=0;i<categoriesListItem.length;i++) {
-      catchThis.listEventListener(i, categoriesListItem);
-    }
-  };
-
-  TodoApp.prototype.addButtonEventListener = function(counter, buttons) {
-      var catchThis = this;
-      buttons[counter].addEventListener('click', function(e) {
-        e.preventDefault(e);
-        var getItem = prompt('What task do you like to accomplish?');
-        if(getItem) {
-          catchThis.addItem(getItem, counter);
-          catchThis.renderApp();
-        }
-      });
-  };
-
-  TodoApp.prototype.completeItemEventListener = function(index, elements) {
-    elements[index].addEventListener('click', function() {
-      this.classList.toggle('is-completed');
     });
-  };
 
-  TodoApp.prototype.itemController = function() {
-    var buttons = document.getElementsByClassName('add-item');
-    var catchThis = this;
-    for (var i=0;i<buttons.length;i++) {
-      catchThis.addButtonEventListener(i, buttons);
+    TodoListElement.addEventListener('click', function(e) {
+        if(e.target.className == 'remove-item') {
+            var id = e.target.parentElement.id.replace('item_', '');
+            removeTask(id);
+            renderTaskList();
+        }
+        if(e.target.className == 'checkbox') {
+            var id = e.target.parentElement.id.replace('item_', '');
+            toggleTask(id);
+            renderTaskList();
+        }
+        if(e.target.className == 'content') {
+            e.preventDefault();
+            // console.log('now convert to input field', e);
+            // console.log(e.target.innerText);
+            var form = document.createElement('form');
+            var inputField = document.createElement('input');
+            inputField.setAttribute('type', 'text');
+            inputField.setAttribute('value', e.target.innerText);
+            form.append(inputField);
+            e.target.parentNode.replaceChild(form, e.target);
+            inputField.focus();
+        }
+    });
+
+    TodoListElement.addEventListener('submit', function(e) {
+        e.preventDefault();
+        console.log(e, e.target.parentNode.parentNode.id);
+        console.log(e.target.childNodes[0].value);
+        var id = e.target.parentNode.parentNode.id.replace('item_', '');
+        updateTask(id, e.target.childNodes[0].value);
+        renderTaskList();
+
+    });
+
+    document.getElementById('filter').addEventListener('click', function(e) {
+        switch(e.target.id) {
+            case 'show-all':
+                TodoApp.visibilityFilter = 'SHOW_ALL';
+                break;
+            case 'show-active':
+                TodoApp.visibilityFilter = 'SHOW_ACTIVE';
+                break;
+            case 'show-completed':
+                TodoApp.visibilityFilter = 'SHOW_COMPLETED';
+                break;
+        }
+        renderTaskList();
+    });
+
+
+
+    if (storageAvailable('localStorage')) {
+        // Yippee! We can use localStorage awesomeness
+        console.log('Yippee! We can use localStorage awesomeness');
+        if(!localStorage.getItem('TodoApp')) {
+            TodoApp = {
+                todos: {},
+                visibilityFilter: 'SHOW_ALL',
+                nextTodoId: 1
+            };
+            updateStore();
+        } else {
+            TodoApp = JSON.parse(localStorage.getItem('TodoApp'));
+        }
     }
-    var items = document.getElementsByClassName('todo-item');
-    for(var j=0;j<items.length;j++) {
-      catchThis.completeItemEventListener(j, items);
-    }
-  };
-
-  TodoApp.prototype.renderApp = function() {
-    this.renderCategories();
-    this.renderLists();
-    console.log(this);
-  };
-
-  TodoApp.prototype.renderCategories = function() {
-    var catchThis = this;
-    var categorieElement = document.getElementById('categories');
-    var allItems = 0;
-    categorieElement.innerHTML = "";
-    for (var i=0;i<this.all.length;i++) {
-      var listElement = '<li class="todo-list-category"><span class="todo-list-category-name">' + this.all[i].name + '</span>';
-      listElement += ' <span class="category-count">' + this.all[i].items.length + '</span> <span class="remove-category">x</span></li>';
-      categorieElement.innerHTML += listElement;
-      allItems += this.all[i].items.length;
-    }
-    categorieElement.innerHTML += '<li class="is-active">All Items <span class="category-count">' + allItems + '</span></li>';
-    this.listController();
-  };
-
-  TodoApp.prototype.renderLists = function(listname) {
-    var listBlock = document.getElementById('todoapp');
-    listBlock.innerHTML = "";
-    for (var i=0;i<this.all.length;i++) {
-      var list = '<h2>' + this.all[i].name + '</h2>';
-      list += '<ul class="todo-list">';
-      for (var j=0;j<this.all[i].items.length;j++) {
-        list += '<li class="todo-item';
-        if(this.all[i].items[j].isCompleted === true) {
-          list += ' is-completed';
-        } 
-        list += '"">' + this.all[i].items[j].name + '</li>';
-      }
-      list += '</ul>';
-      list += '<a class="add-item" href="#">+ Add Item</a>';
-      listBlock.innerHTML += list;
+    else {
+        // Too bad, no localStorage for us
+        console.log('Too bad, no localStorage for us');
     }
 
-    this.itemController();
-  };
+    renderTaskList();
 
 
 
-
-  // ===========================================
-  // TODO LIST CONSTRUCTOR
-  // ===========================================
-
-  function TodoList(name) {
-    this.name = name;
-    this.items = [];
-  }
-
-  TodoList.prototype.addItem = function(name) {
-    this.items.push(new TodoItem(name));
-  };
-
-  // ===========================================
-  // TODO ITEM CONSTRUCTOR
-  // ===========================================
-
-  var IdCounter = 0;
-
-  function TodoItem(name) {
-    this.name = name;
-    this.isCompleted = false;
-    this.ID = IdCounter;
-    IdCounter++;
-  }
-
-
-
-
-
-
-  // ===========================================
-  // APP RUNTIME
-  // ===========================================
-
-  var groceries = new TodoList('Groceries');
-  groceries.addItem('Milk');
-  groceries.addItem('Eggs');
-
-
-  var travel = new TodoList('Travel Destinations');
-  travel.addItem('Brazil');
-  travel.addItem('New York');
-
-
-  var home = new TodoList('Home ToDos');
-  home.addItem('Clean Kitchen');
-
-  var work = new TodoList('Work Tasks');
-  work.addItem('Finish yearly report');
-  work.addItem('Contact Marketing Team');
-
-  // var counter = 0;
-  // while(counter<55) {
-  //   travel.addItem('Destination');
-  //   counter++;
-  // }
-
-
-  var app = new TodoApp();
-  app.addList(work);
-  app.addList(home);
-  app.addList(groceries);
-  app.addList(travel);
-
-  app.renderApp();
-
-
-
+    window.TodoApp = TodoApp;
 
 })();
