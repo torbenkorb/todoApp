@@ -1,7 +1,80 @@
 (function() {
     'use strict';
 
-    var TodoApp = {};
+
+
+
+
+    var initialState = {
+        todos: {},
+        visibilityFilter: 'SHOW_ALL',
+        nextTodoId: 1
+    };
+
+    var reducer = function(state, action) {
+      switch(action.type) {
+
+        case 'CREATE_TODO':
+          var id = state.nextTodoId;
+          var todo = {
+            [id]: {
+              id: state.nextTodoId,
+              name: action.name,
+              completed: false,
+              created: Date.now()
+            }
+          };
+          return Object.assign({}, state, {
+            todos: Object.assign({}, state.todos, todo),
+            nextTodoId: id + 1
+          });
+          break;
+
+        case 'UPDATE_TODO':
+          var todo = {
+            [action.id]: Object.assign({}, state.todos[action.id], {
+              name: action.name
+            })
+          }
+          return Object.assign({}, state, {
+            todos: Object.assign({}, state.todos, todo)
+          });
+          break;
+
+        case 'REMOVE_TODO':
+          var todos = state.todos;
+          delete todos[action.id];
+          return Object.assign({}, state, {
+            todos: todos
+          });
+          break;
+
+        default:
+          return state;
+          break;
+      }
+    };
+
+
+
+    var actions = [
+      {type: 'CREATE_TODO', name: 'Buy Milk' },
+      {type: 'CREATE_TODO', name: 'Walk the Dog'},
+      {type: 'CREATE_TODO', name: 'Buy a Car'},
+      {type: 'REMOVE_TODO', id: 2},
+      {type: 'UPDATE_TODO', id: 1, name: 'Buy more milk'}
+    ];
+
+    var TodoApp = actions.reduce(reducer, initialState);
+
+    // console.log(globalState);
+
+
+
+
+
+
+    // var TodoApp = {};
 
     var TodoListElement = document.getElementById('TodoList');
 
@@ -116,10 +189,18 @@
 
     document.getElementById('get-value').addEventListener('submit', function(e) {
         e.preventDefault();
+        console.log(e);
         var inputField = document.getElementById('input-field');
         var userInput = inputField.value;
         if(userInput) {
-            addTask(userInput);
+            console.log(userInput);
+
+            TodoApp = reducer(TodoApp, {
+              type: 'CREATE_TODO',
+              name: 'yes'
+            });
+
+            //addTask(userInput);
             inputField.value = '';
             renderTaskList();
         }
@@ -152,12 +233,9 @@
 
     TodoListElement.addEventListener('submit', function(e) {
         e.preventDefault();
-        console.log(e, e.target.parentNode.parentNode.id);
-        console.log(e.target.childNodes[0].value);
         var id = e.target.parentNode.parentNode.id.replace('item_', '');
         updateTask(id, e.target.childNodes[0].value);
         renderTaskList();
-
     });
 
     document.getElementById('filter').addEventListener('click', function(e) {
@@ -177,29 +255,30 @@
 
 
 
-    if (storageAvailable('localStorage')) {
-        // Yippee! We can use localStorage awesomeness
-        console.log('Yippee! We can use localStorage awesomeness');
-        if(!localStorage.getItem('TodoApp')) {
-            TodoApp = {
-                todos: {},
-                visibilityFilter: 'SHOW_ALL',
-                nextTodoId: 1
-            };
-            updateStore();
-        } else {
-            TodoApp = JSON.parse(localStorage.getItem('TodoApp'));
-        }
-    }
-    else {
-        // Too bad, no localStorage for us
-        console.log('Too bad, no localStorage for us');
-    }
+    // if (storageAvailable('localStorage')) {
+    //     if(!localStorage.getItem('TodoApp')) {
+    //         TodoApp = {
+    //             todos: {},
+    //             visibilityFilter: 'SHOW_ALL',
+    //             nextTodoId: 1
+    //         };
+    //         updateStore();
+    //     } else {
+    //         TodoApp = JSON.parse(localStorage.getItem('TodoApp'));
+    //     }
+    // }
+    // else {
+    //     // Too bad, no localStorage for us
+    //     console.log('Too bad, no localStorage for us');
+    // }
+
+    //TodoApp = globalState;
 
     renderTaskList();
 
 
 
     window.TodoApp = TodoApp;
+    window.state = TodoApp;
 
 })();
