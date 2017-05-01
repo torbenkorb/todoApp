@@ -3,10 +3,10 @@
 
     if(withDevTools) {
       var config = arguments[0] || {};
-        config.features = { pause: true, export: true, test: true };
-        config.type = 'redux';
-        if (config.autoPause === undefined) config.autoPause = true;
-        if (config.latency === undefined) config.latency = 500;
+      config.features = { pause: true, export: true, test: true };
+      config.type = 'redux';
+      if (config.autoPause === undefined) config.autoPause = true;
+      if (config.latency === undefined) config.latency = 500;
       var devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect(config);
     }
 
@@ -18,7 +18,7 @@
     };
 
     function withDevTools() {
-      return (window !== 'undefined' && window.devToolsExtension);
+      return (window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__);
     }
 
     function validateAction(action) {
