@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    if(withDevTools) {
+    if(withDevTools()) {
       var config = arguments[0] || {};
       config.features = { pause: true, export: true, test: true };
       config.type = 'redux';
@@ -34,14 +34,14 @@
       if(state === undefined) {
         state = initialState;
       }
-      if(withDevTools) {
+      if(withDevTools()) {
         devTools.init(state);
       }
       return {
         dispatch: function(action) {
           validateAction(action);
           state = reducer(state, action);
-          if(withDevTools) {
+          if(withDevTools()) {
             devTools.send(action, state);
           }
           console.log(state);
