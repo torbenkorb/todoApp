@@ -1,9 +1,7 @@
 (function() {
     'use strict';
 
-
-
-
+    var TodoListElement = document.getElementById('TodoList');
 
     var initialState = {
         todos: {},
@@ -11,9 +9,37 @@
         nextTodoId: 1
     };
 
+    function validateAction(action) {
+      if (!action || typeof action !== 'object' || Array.isArray(action)) {
+        throw new Error('Action must be an object!');
+      }
+      if (action.type === 'undefined') {
+        throw new Error('Action must have a type!');
+      }
+    }
+
+    var createStore = function(reducer, state) {
+      if(state === undefined) {
+        state = initialState;
+      }
+      return {
+        dispatch: function(action) {
+          validateAction(action);
+          state = reducer(state, action);
+          console.log(state);
+        },
+        getState: function() {
+          return state;
+        },
+        subscribe: function() {
+          localStorage.setItem('TodoApp', JSON.stringify(state))
+        }
+      }
+    };
+
+
     var reducer = function(state, action) {
       switch(action.type) {
-
         case 'CREATE_TODO':
           var id = state.nextTodoId;
           var todo = {
@@ -49,6 +75,23 @@
           });
           break;
 
+        case 'TOGGLE_TASK':
+          var todo = {
+            [action.id]: Object.assign({}, state.todos[action.id], {
+              completed: !state.todos[action.id].completed
+            })
+          };
+          return Object.assign({}, state, {
+            todos: Object.assign({}, state.todos, todo)
+          });
+          break;
+
+        case 'SET_VISIBILITY_FILTER':
+          return Object.assign({}, state, {
+            visibilityFilter: action.filter
+          });
+          break;
+
         default:
           return state;
           break;
@@ -57,69 +100,55 @@
 
 
 
-    var actions = [
-      {type: 'CREATE_TODO', name: 'Buy Milk' },
-      {type: 'CREATE_TODO', name: 'Walk the Dog'},
-      {type: 'CREATE_TODO', name: 'Buy a Car'},
-      {type: 'REMOVE_TODO', id: 2},
-      {type: 'UPDATE_TODO', id: 1, name: 'Buy more milk'}
-    ];
-
-    var TodoApp = actions.reduce(reducer, initialState);
-
-    // console.log(globalState);
 
 
 
 
 
-
-    // var TodoApp = {};
-
-    var TodoListElement = document.getElementById('TodoList');
-
-    function addTask(task) {
-        var id = TodoApp.nextTodoId;
-        var taskObject = {
-            id: id,
-            name: task,
-            completed: false,
-            created: Date.now()
+    if (storageAvailable('localStorage')) {
+        if(!localStorage.getItem('TodoApp')) {
+            var newApp = createStore(reducer);
+            newApp.dispatch({
+              type: 'CREATE_TODO',
+              name: 'Buy Milk'
+            });
+            newApp.dispatch({
+              type: 'CREATE_TODO',
+              name: 'Walk the Dog'
+            });
+            newApp.dispatch({
+              type: 'TOGGLE_TASK',
+              id: 1
+            });
+            newApp.getState();
+            newApp.subscribe();
+        } else {
+            var storedState = JSON.parse(localStorage.getItem('TodoApp'))
+            var newApp = createStore(reducer, storedState);
         }
-        TodoApp.todos[id] = taskObject;
-        TodoApp.nextTodoId++;
+    }
+    else {
+        // Too bad, no localStorage for us
+        console.log('Too bad, no localStorage for us');
     }
 
-    function updateTask(id, task) {
-        TodoApp.todos[id].name = task;
-    }
-
-    function removeTask(id) {
-        delete TodoApp.todos[id];
-    }
-
-    function toggleTask(id) {
-        TodoApp.todos[id].completed = !TodoApp.todos[id].completed;
-    }
-
-    function updateStore() {
-        localStorage.setItem('TodoApp', JSON.stringify(TodoApp));
-    }
+    window.newApp = newApp;
 
     function renderTaskList() {
         var collection;
         var html = '<ul>';
         var visibilityClass = 'show-all';
-        var todosAsArray = Object.values(TodoApp.todos);
+        var state = newApp.getState();
+        var todosAsArray = Object.values(state.todos);
         var total = todosAsArray.length;
         var activeItems = todosAsArray.filter(function(item) { return item.completed === false });
         var completeItems = todosAsArray.filter(function(item) { return item.completed === true });
         var stats = activeItems.length + ' items left';
         var filterContainer = document.getElementById('filter');
 
-        updateStore();
+        newApp.subscribe();
 
-        switch(TodoApp.visibilityFilter) {
+        switch(state.visibilityFilter) {
             case 'SHOW_COMPLETED':
                 collection = completeItems;
                 visibilityClass = 'show-completed';
@@ -131,26 +160,31 @@
             default:
                 collection = todosAsArray;
                 collection.sort(function(a,b) {
-                    if(a.completed != b.completed) {
-                        return a.completed - b.completed;
-                    } else {
+                    // if(a.completed != b.completed) {
+                    //     return a.completed - b.completed;
+                    // } else {
                         return a.id - b.id;
-                    }
+                    //}
                 });
                 break;
         }
 
         collection.forEach(function(item) {
-            html += '<li id="item_' + item.id + '">';
+            html += '<li id="item_' + item.id + '"';
+            if(item.completed) {
+              html += ' class="completed"';
+            }
+            html += '>';
             html += '<input class="checkbox" type="checkbox" id="ID_' + item.id + '"';
             if(item.completed) {
                 html += ' checked';
             }
             html += '><label for="ID_' + item.id + '">';
+            html += '<div class="checkbox-dummy"></div></label>';
             html += '<span class="content">';
             html += item.name;
             html += '</span>';
-            html += '</label><div class="remove-item">&times;</div>';
+            html += '<div class="remove-item">&times;</div>';
             html += '</li>';
         });
         html += '</ul>';
@@ -168,8 +202,6 @@
 
         filterContainer.classList.remove('show-all', 'show-completed', 'show-active');
         filterContainer.classList.add(visibilityClass);
-
-
     }
 
     function storageAvailable(type) {
@@ -187,21 +219,19 @@
 
 
 
+
+
+
     document.getElementById('get-value').addEventListener('submit', function(e) {
         e.preventDefault();
-        console.log(e);
         var inputField = document.getElementById('input-field');
         var userInput = inputField.value;
+        inputField.value = '';
         if(userInput) {
-            console.log(userInput);
-
-            TodoApp = reducer(TodoApp, {
+            newApp.dispatch({
               type: 'CREATE_TODO',
-              name: 'yes'
+              name: userInput
             });
-
-            //addTask(userInput);
-            inputField.value = '';
             renderTaskList();
         }
     });
@@ -209,18 +239,22 @@
     TodoListElement.addEventListener('click', function(e) {
         if(e.target.className == 'remove-item') {
             var id = e.target.parentElement.id.replace('item_', '');
-            removeTask(id);
+            newApp.dispatch({
+              type: 'REMOVE_TODO',
+              id: id
+            });
             renderTaskList();
         }
-        if(e.target.className == 'checkbox') {
-            var id = e.target.parentElement.id.replace('item_', '');
-            toggleTask(id);
+        if(e.target.className == 'checkbox-dummy') {
+            var id = e.target.parentElement.htmlFor.replace('ID_', '');
+            newApp.dispatch({
+              type: 'TOGGLE_TASK',
+              id: id
+            });
             renderTaskList();
         }
         if(e.target.className == 'content') {
             e.preventDefault();
-            // console.log('now convert to input field', e);
-            // console.log(e.target.innerText);
             var form = document.createElement('form');
             var inputField = document.createElement('input');
             inputField.setAttribute('type', 'text');
@@ -233,52 +267,40 @@
 
     TodoListElement.addEventListener('submit', function(e) {
         e.preventDefault();
-        var id = e.target.parentNode.parentNode.id.replace('item_', '');
-        updateTask(id, e.target.childNodes[0].value);
+        var id = e.target.parentNode.id.replace('item_', '');
+        var value = e.target.childNodes[0].value;
+        newApp.dispatch({
+          type: 'UPDATE_TODO',
+          id: id,
+          name: value
+        });
         renderTaskList();
     });
 
     document.getElementById('filter').addEventListener('click', function(e) {
         switch(e.target.id) {
             case 'show-all':
-                TodoApp.visibilityFilter = 'SHOW_ALL';
+                newApp.dispatch({
+                  type: 'SET_VISIBILITY_FILTER',
+                  filter: 'SHOW_ALL'
+                });
                 break;
             case 'show-active':
-                TodoApp.visibilityFilter = 'SHOW_ACTIVE';
+                newApp.dispatch({
+                  type: 'SET_VISIBILITY_FILTER',
+                  filter: 'SHOW_ACTIVE'
+                });
                 break;
             case 'show-completed':
-                TodoApp.visibilityFilter = 'SHOW_COMPLETED';
+                newApp.dispatch({
+                  type: 'SET_VISIBILITY_FILTER',
+                  filter: 'SHOW_COMPLETED'
+                });
                 break;
         }
         renderTaskList();
     });
 
-
-
-    // if (storageAvailable('localStorage')) {
-    //     if(!localStorage.getItem('TodoApp')) {
-    //         TodoApp = {
-    //             todos: {},
-    //             visibilityFilter: 'SHOW_ALL',
-    //             nextTodoId: 1
-    //         };
-    //         updateStore();
-    //     } else {
-    //         TodoApp = JSON.parse(localStorage.getItem('TodoApp'));
-    //     }
-    // }
-    // else {
-    //     // Too bad, no localStorage for us
-    //     console.log('Too bad, no localStorage for us');
-    // }
-
-    //TodoApp = globalState;
-
     renderTaskList();
-
-
-
-    window.TodoApp = TodoApp;
-    window.state = TodoApp;
 
 })();

@@ -15,7 +15,38 @@ body {
 }
 
 h1 {
-    margin: 48px 24px 24px;
+    font-size: 24px;
+    font-weight: normal;
+    margin: 0 auto 0 0;
+}
+
+.site-header {
+    background-color: #fff;
+    box-shadow: rgba(0, 0, 0, 0.117647) 0px 1px 6px, rgba(0, 0, 0, 0.117647) 0px 1px 4px;
+    margin: 0;
+    padding: 12px 24px;
+}
+
+.site-header .container {
+    display: -webkit-box;
+    display: flex;
+    -webkit-box-align: center;
+            align-items: center;
+}
+
+.site-header i {
+    color: rgba(0,0,0,0.37);
+    cursor: pointer;
+}
+
+.site-header i:hover {
+    color: rgba(0,0,0,0.54);
+}
+
+.container {
+    width: 900%;
+    max-width: 780px;
+    margin: 0 auto;
 }
 
 #TodoApp {
@@ -45,12 +76,10 @@ input[type="checkbox"] {
 
 label {
     cursor: pointer;
-    display: block;
-    padding: 16px 24px;
 }
 
-label:before {
-    content: "";
+label .checkbox-dummy {
+    background-color: #fff;
     color: rgba(0,0,0,0.87);
     display: inline-block;
     height: 24px;
@@ -61,8 +90,11 @@ label:before {
     margin-right: 16px;
 }
 
+label .checkbox-dummy:before{
+    content: "";
+}
 
-:checked + label:before {
+.completed .checkbox-dummy:before {
     content: "check";
     font-family: 'Material Icons';
     font-weight: normal;
@@ -98,9 +130,16 @@ ul {
 li {
     border-bottom: 1px solid rgba(0,0,0,0.12);
     position: relative;
+    padding: 16px 24px;
+    display: -webkit-box;
+    display: flex;
 }
 li:last-child {
     border: 0;
+}
+
+li:hover {
+    background-color: #fafafa;
 }
 
 li:hover .remove-item {
@@ -109,10 +148,10 @@ li:hover .remove-item {
 
 ul form {
     display: inline-block;
+    width: 80%;
 }
 
 ul input[type="text"] {
-    width: initial;
     padding: 8px;
 }
 
@@ -124,9 +163,15 @@ ul input[type="text"] {
     box-shadow: rgba(0, 0, 0, 0.117647) 0px 1px 6px, rgba(0, 0, 0, 0.117647) 0px 1px 4px;
 }
 
-:checked + label {
+.completed .content {
     text-decoration: line-through;
     color: rgba(0,0,0,0.37);
+}
+
+.content {
+    padding-right: 36px;
+    -ms-grid-row-align: center;
+        align-self: center;
 }
 
 .remove-item {
@@ -202,9 +247,7 @@ ul input[type="text"] {
 
 
 @media screen and (min-width: 780px) {
-    h1 {
-        margin: 0 0 24px;
-    }
+
     #TodoApp {
         width: 90%;
         max-width: 780px;
