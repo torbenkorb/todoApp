@@ -1,13 +1,25 @@
 (function() {
     'use strict';
 
-    var TodoListElement = document.getElementById('TodoList');
+    if(withDevTools) {
+      var config = arguments[0] || {};
+        config.features = { pause: true, export: true, test: true };
+        config.type = 'redux';
+        if (config.autoPause === undefined) config.autoPause = true;
+        if (config.latency === undefined) config.latency = 500;
+      var devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect(config);
+    }
 
+    var TodoListElement = document.getElementById('TodoList');
     var initialState = {
         todos: {},
         visibilityFilter: 'SHOW_ALL',
         nextTodoId: 1
     };
+
+    function withDevTools() {
+      return (window !== 'undefined' && window.devToolsExtension);
+    }
 
     function validateAction(action) {
       if (!action || typeof action !== 'object' || Array.isArray(action)) {
@@ -22,10 +34,16 @@
       if(state === undefined) {
         state = initialState;
       }
+      if(withDevTools) {
+        devTools.init(state);
+      }
       return {
         dispatch: function(action) {
           validateAction(action);
           state = reducer(state, action);
+          if(withDevTools) {
+            devTools.send(action, state);
+          }
           console.log(state);
         },
         getState: function() {
@@ -36,7 +54,6 @@
         }
       }
     };
-
 
     var reducer = function(state, action) {
       switch(action.type) {
@@ -97,12 +114,6 @@
           break;
       }
     };
-
-
-
-
-
-
 
 
     if (storageAvailable('localStorage')) {
