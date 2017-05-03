@@ -1,15 +1,6 @@
 (function() {
     'use strict';
 
-    if(withDevTools()) {
-        var config = arguments[0] || {};
-        config.features = { pause: true, export: true, test: true };
-        config.type = 'redux';
-        if (config.autoPause === undefined) config.autoPause = true;
-        if (config.latency === undefined) config.latency = 500;
-        var devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect(config);
-    }
-
     var TodoListElement = document.getElementById('TodoList');
     var initialState = {
         todos: {},
@@ -23,6 +14,15 @@
         },
         nextListId: 2
     };
+
+    if(withDevTools()) {
+        var config = arguments[0] || {};
+        config.features = { pause: true, export: true, test: true };
+        config.type = 'redux';
+        if (config.autoPause === undefined) config.autoPause = true;
+        if (config.latency === undefined) config.latency = 500;
+        var devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect(config);
+    }
 
     function withDevTools() {
       return (window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__);
@@ -134,10 +134,17 @@
             break;
 
         case 'REMOVE_LIST':
-            var lists = state.lists;
+            var lists = Object.assign({}, state.lists);
             delete lists[action.id];
+            var todos = Object.assign({}, state.todos);
+            for (var key in todos) {
+                if(todos[key].listID === action.id) {
+                    delete todos[key];
+                }
+            }
             return Object.assign({}, state, {
-                lists: lists
+                lists: lists,
+                todos: todos
             });
             break;
 
