@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
     <title>TodoApp</title>
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,700" rel="stylesheet">
@@ -11,13 +11,21 @@
 
   <header>
     <div class="site-header">
+      <i class="material-icons" id="drawer-open">menu</i>
       <h1>TodoApp</h1>
+      <i class="material-icons">notifications</i>
+      <i class="material-icons" id="print">print</i>
     </div>
   </header>
   <div id="TodoApp">
+      <div class="drawer" id="drawer">
+        <ul id="categories"></ul>
+        <div id="add-list">+ Add List</div>
+      </div>
       <form id="get-value">
           <input id="input-field" type="text" placeholder="Add a task...">
       </form>
+      <h2 id="list-name"></h2>
       <div class="todolist-wrapper">
           <div id="TodoList"></div>
           <div id="list-bottom" class="bottom">

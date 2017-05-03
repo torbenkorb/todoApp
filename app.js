@@ -2,19 +2,26 @@
     'use strict';
 
     if(withDevTools()) {
-      var config = arguments[0] || {};
-      config.features = { pause: true, export: true, test: true };
-      config.type = 'redux';
-      if (config.autoPause === undefined) config.autoPause = true;
-      if (config.latency === undefined) config.latency = 500;
-      var devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect(config);
+        var config = arguments[0] || {};
+        config.features = { pause: true, export: true, test: true };
+        config.type = 'redux';
+        if (config.autoPause === undefined) config.autoPause = true;
+        if (config.latency === undefined) config.latency = 500;
+        var devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect(config);
     }
 
     var TodoListElement = document.getElementById('TodoList');
     var initialState = {
         todos: {},
-        visibilityFilter: 'SHOW_ALL',
-        nextTodoId: 1
+        visibilityFilter: {
+            history: 'SHOW_ALL',
+            category: 'ALL'
+        },
+        nextTodoId: 1,
+        lists: {
+            1: 'Inbox'
+        },
+        nextListId: 2
     };
 
     function withDevTools() {
@@ -31,6 +38,7 @@
     }
 
     var createStore = function(reducer, state) {
+      var subscribers = [];
       if(state === undefined) {
         state = initialState;
       }
@@ -38,19 +46,28 @@
         devTools.init(state);
       }
       return {
-        dispatch: function(action) {
+        dispatch: function dispatch(action) {
           validateAction(action);
           state = reducer(state, action);
           if(withDevTools()) {
             devTools.send(action, state);
           }
           console.log(state);
+          subscribers.forEach(function (handler) {
+            return handler();
+          });
         },
-        getState: function() {
+        getState: function getState() {
           return state;
         },
-        subscribe: function() {
-          localStorage.setItem('TodoApp', JSON.stringify(state))
+        subscribe: function subscribe(handler) {
+          subscribers.push(handler);
+          return function() {
+            var index = subscribers.indexOf(handler);
+            if(index > 0) {
+              subscribers.splice(index, 1);
+            }
+          };
         }
       }
     };
@@ -61,10 +78,11 @@
           var id = state.nextTodoId;
           var todo = {
             [id]: {
-              id: state.nextTodoId,
+              id: id,
               name: action.name,
               completed: false,
-              created: Date.now()
+              created: Date.now(),
+              listID: action.listID || 1
             }
           };
           return Object.assign({}, state, {
@@ -93,21 +111,44 @@
           break;
 
         case 'TOGGLE_TASK':
-          var todo = {
-            [action.id]: Object.assign({}, state.todos[action.id], {
-              completed: !state.todos[action.id].completed
-            })
-          };
-          return Object.assign({}, state, {
-            todos: Object.assign({}, state.todos, todo)
-          });
-          break;
+            var todo = {
+                [action.id]: Object.assign({}, state.todos[action.id], {
+                    completed: !state.todos[action.id].completed
+                })
+            };
+            return Object.assign({}, state, {
+                todos: Object.assign({}, state.todos, todo)
+            });
+            break;
+
+        case 'CREATE_CATEGORY':
+            var id = state.nextListId;
+            console.log(id);
+            var list = {
+                [id]: action.name
+            };
+            return Object.assign({}, state, {
+                lists: Object.assign({}, state.lists, list),
+                nextListId: id + 1
+            });
+            break;
 
         case 'SET_VISIBILITY_FILTER':
-          return Object.assign({}, state, {
-            visibilityFilter: action.filter
-          });
-          break;
+            var filter = {
+                history: action.filter
+            };
+            return Object.assign({}, state, {
+                visibilityFilter: Object.assign({}, state.visibilityFilter, filter)
+            });
+            break;
+
+        case 'SET_CATEGORY':
+            var filter = {
+                category: action.id
+            };
+            return Object.assign({}, state, {
+                visibilityFilter: Object.assign({}, state.visibilityFilter, filter)
+            });
 
         default:
           return state;
@@ -124,19 +165,24 @@
               name: 'Buy Milk'
             });
             newApp.dispatch({
+                type:'CREATE_CATEGORY',
+                name: 'Work'
+            });
+            newApp.dispatch({
               type: 'CREATE_TODO',
-              name: 'Walk the Dog'
+              name: 'Yearly Business Report',
+              listID: 2
             });
             newApp.dispatch({
               type: 'TOGGLE_TASK',
               id: 1
             });
             newApp.getState();
-            newApp.subscribe();
         } else {
             var storedState = JSON.parse(localStorage.getItem('TodoApp'))
             var newApp = createStore(reducer, storedState);
         }
+        newApp.subscribe(storeInLocalStorage);
     }
     else {
         // Too bad, no localStorage for us
@@ -147,6 +193,7 @@
 
     function renderTaskList() {
         var collection;
+        var listTitle;
         var html = '<ul>';
         var visibilityClass = 'show-all';
         var state = newApp.getState();
@@ -157,9 +204,7 @@
         var stats = activeItems.length + ' items left';
         var filterContainer = document.getElementById('filter');
 
-        newApp.subscribe();
-
-        switch(state.visibilityFilter) {
+        switch(state.visibilityFilter.history) {
             case 'SHOW_COMPLETED':
                 collection = completeItems;
                 visibilityClass = 'show-completed';
@@ -175,9 +220,13 @@
                     //     return a.completed - b.completed;
                     // } else {
                         return a.id - b.id;
-                    //}
+                    // }
                 });
                 break;
+        }
+
+        if(state.visibilityFilter.category !== 'ALL') {
+            collection = collection.filter(function(item) { return item.listID === parseInt(state.visibilityFilter.category) });
         }
 
         collection.forEach(function(item) {
@@ -195,6 +244,12 @@
             html += '<span class="content">';
             html += item.name;
             html += '</span>';
+
+
+            html += '<span class="label">';
+            html += state.lists[item.listID];
+            html += '</span>';
+
             html += '<div class="remove-item">&times;</div>';
             html += '</li>';
         });
@@ -213,6 +268,33 @@
 
         filterContainer.classList.remove('show-all', 'show-completed', 'show-active');
         filterContainer.classList.add(visibilityClass);
+
+        if(state.visibilityFilter.category !== 'ALL') {
+            listTitle = state.lists[state.visibilityFilter.category];
+        } else {
+            listTitle = 'All Tasks';
+        }
+        document.getElementById('list-name').innerHTML = listTitle;
+
+        var categories = '';
+        for(var categoryID in state.lists) {
+            var tasksInCategory = todosAsArray.filter(function(item) { return item.listID === parseInt(categoryID) && item.completed === false });
+            var tasksCount = tasksInCategory.length;
+            categories += '<li id="cat_' + categoryID + '"';
+            if(categoryID === state.visibilityFilter.category) {
+                categories += ' class="active"';
+            }
+            categories += '>'
+            categories += state.lists[categoryID];
+            categories += ' <span class="cat-count">(' + tasksCount + ')</span>';
+            categories += '</li>';
+        }
+        categories += '<li id="cat_ALL"';
+        if(state.visibilityFilter.category === 'ALL') {
+            categories += ' class="active"';
+        }
+        categories += '>All Tasks <span class="cat-count">(' + activeItems.length + ')</span></li>';
+        document.getElementById('categories').innerHTML = categories;
     }
 
     function storageAvailable(type) {
@@ -228,15 +310,24 @@
         }
     }
 
+    function storeInLocalStorage() {
+      var state = newApp.getState();
+      localStorage.setItem('TodoApp', JSON.stringify(state));
+    }
+
     document.getElementById('get-value').addEventListener('submit', function(e) {
         e.preventDefault();
         var inputField = document.getElementById('input-field');
         var userInput = inputField.value;
+        var state = newApp.getState();
+        var category = state.visibilityFilter.category;
+        category = category === 'ALL' ? 1 : parseInt(category);
         inputField.value = '';
         if(userInput) {
             newApp.dispatch({
               type: 'CREATE_TODO',
-              name: userInput
+              name: userInput,
+              listID: category
             });
             renderTaskList();
         }
@@ -305,6 +396,38 @@
                 break;
         }
         renderTaskList();
+    });
+
+
+    document.getElementById('drawer-open').addEventListener('click', function() {
+        var body = document.getElementsByTagName('body')[0];
+        body.classList.toggle('open-drawer');
+    });
+
+    document.getElementById('print').addEventListener('click', function() {
+        window.print();
+    });
+
+    document.getElementById('categories').addEventListener('click', function(e) {
+        if(e.target.tagName === 'LI') {
+            var id = e.target.id.replace('cat_', '');
+            newApp.dispatch({
+                type: 'SET_CATEGORY',
+                id: id
+            });
+            renderTaskList();
+        }
+    });
+
+    document.getElementById('add-list').addEventListener('click', function() {
+        var category = prompt('Category Name?');
+        if(category) {
+            newApp.dispatch({
+                type: 'CREATE_CATEGORY',
+                name: category
+            });
+            renderTaskList();
+        }
     });
 
     renderTaskList();
