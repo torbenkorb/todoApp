@@ -12,20 +12,25 @@
   <header>
     <div class="site-header">
       <i class="material-icons" id="drawer-open">menu</i>
-      <h1>TodoApp</h1>
-      <i class="material-icons">notifications</i>
+      <h1>Lists</h1>
+      <i class="material-icons">search</i>
+      <i class="material-icons" id="notifications">notifications</i>
       <i class="material-icons" id="print">print</i>
     </div>
   </header>
   <div id="TodoApp">
       <div class="drawer" id="drawer">
+        <div class="drawer-title">
+          <h1>TodoApp</h1>
+        </div>
         <ul id="categories"></ul>
-        <div id="add-list">+ Add List</div>
+        <div >
+          <a id="add-list" href="">Add List</a>
+        </div>
       </div>
       <form id="get-value">
           <input id="input-field" type="text" placeholder="Add a task...">
       </form>
-      <h2 id="list-name"></h2>
       <div class="todolist-wrapper">
           <div id="TodoList"></div>
           <div id="list-bottom" class="bottom">

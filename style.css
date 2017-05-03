@@ -69,10 +69,24 @@ h2 {
 }
 
 #TodoList {
+
+}
+
+#TodoList h2 {
+    border-bottom: 1px solid rgba(0,0,0,0.12);
+    margin: 0;
+    padding: 24px;
+    font-weight: 400;
+}
+
+#TodoList h2 + .bottom {
+    border-top: 0;
+}
+
+#TodoList ul {
     overflow: auto;
     max-height: 65vh;
 }
-
 input[type="text"] {
     background-color: #fff;
     padding: 16px 24px;
@@ -312,9 +326,25 @@ body.open-drawer {
     padding-left: 256px;
 }
 
+.drawer-title {
+    border-bottom: 1px solid rgba(0,0,0,0.12);
+    height: 52px;
+    display: -webkit-box;
+    display: flex;
+    -webkit-box-align: center;
+            align-items: center;
+}
+
+#categories {
+    margin-top: 48px;
+}
+
 
 #categories li {
     cursor: pointer;
+    display: list-item;
+    padding: 12px 24px;
+    border: 0;
 }
 
 #categories li.active {
@@ -322,10 +352,53 @@ body.open-drawer {
 }
 
 #add-list {
+    display: inline-block;
     padding: 24px;
+    text-decoration: none;
+    color: rgba(0,0,0,0.54);
 }
 
-#print {
+#add-list:hover {
+    color: rgba(0,0,0,0.87);
+    text-decoration: underline;
+}
+
+
+
+#add-list:before {
+    content: "add";
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;  /* Preferred icon size */
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+
+    /* Support for all WebKit browsers. */
+    -webkit-font-smoothing: antialiased;
+    /* Support for Safari and Chrome. */
+    text-rendering: optimizeLegibility;
+
+    /* Support for Firefox. */
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Support for IE. */
+    -webkit-font-feature-settings: 'liga';
+            font-feature-settings: 'liga';
+
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: -8px;
+    margin-right: 8px;
+}
+
+#print,
+#notifications {
     margin-left: 24px;
 }
 
@@ -333,6 +406,25 @@ body.open-drawer {
     color: rgba(0,0,0,0.34);
     font-size: .8rem;
     margin-left: 8px;
+}
+
+.cat-remove {
+    position: absolute;
+    right: 12px;
+    width: 24px;
+    text-align: center;
+    height: 24px;
+    line-height: 24px;
+    display: none;
+    color: rgba(0,0,0,0.34);
+}
+
+.cat-remove:hover {
+    color: initial;
+}
+
+#categories li:hover .cat-remove {
+    display: inline-block;
 }
 
 

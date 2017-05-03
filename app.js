@@ -133,6 +133,14 @@
             });
             break;
 
+        case 'REMOVE_LIST':
+            var lists = state.lists;
+            delete lists[action.id];
+            return Object.assign({}, state, {
+                lists: lists
+            });
+            break;
+
         case 'SET_VISIBILITY_FILTER':
             var filter = {
                 history: action.filter
@@ -183,6 +191,7 @@
             var newApp = createStore(reducer, storedState);
         }
         newApp.subscribe(storeInLocalStorage);
+        newApp.subscribe(renderApp);
     }
     else {
         // Too bad, no localStorage for us
@@ -194,7 +203,7 @@
     function renderTaskList() {
         var collection;
         var listTitle;
-        var html = '<ul>';
+        var html = '';
         var visibilityClass = 'show-all';
         var state = newApp.getState();
         var todosAsArray = Object.values(state.todos);
@@ -228,6 +237,15 @@
         if(state.visibilityFilter.category !== 'ALL') {
             collection = collection.filter(function(item) { return item.listID === parseInt(state.visibilityFilter.category) });
         }
+
+        if(state.visibilityFilter.category !== 'ALL') {
+            listTitle = state.lists[state.visibilityFilter.category];
+        } else {
+            listTitle = 'All Tasks';
+        }
+
+        html += '<h2>' + listTitle + '</h2>';
+        html += '<ul>';
 
         collection.forEach(function(item) {
             html += '<li id="item_' + item.id + '"';
@@ -269,12 +287,7 @@
         filterContainer.classList.remove('show-all', 'show-completed', 'show-active');
         filterContainer.classList.add(visibilityClass);
 
-        if(state.visibilityFilter.category !== 'ALL') {
-            listTitle = state.lists[state.visibilityFilter.category];
-        } else {
-            listTitle = 'All Tasks';
-        }
-        document.getElementById('list-name').innerHTML = listTitle;
+
 
         var categories = '';
         for(var categoryID in state.lists) {
@@ -286,15 +299,22 @@
             }
             categories += '>'
             categories += state.lists[categoryID];
-            categories += ' <span class="cat-count">(' + tasksCount + ')</span>';
+            categories += ' <span class="cat-count">' + tasksCount + '</span>';
+            if(parseInt(categoryID) !== 1) {
+                categories += '<span class="cat-remove">&times;</span>';
+            }
             categories += '</li>';
         }
         categories += '<li id="cat_ALL"';
         if(state.visibilityFilter.category === 'ALL') {
             categories += ' class="active"';
         }
-        categories += '>All Tasks <span class="cat-count">(' + activeItems.length + ')</span></li>';
+        categories += '>All Tasks <span class="cat-count">' + activeItems.length + '</span></li>';
         document.getElementById('categories').innerHTML = categories;
+    }
+
+    function renderApp() {
+        renderTaskList();
     }
 
     function storageAvailable(type) {
@@ -329,7 +349,7 @@
               name: userInput,
               listID: category
             });
-            renderTaskList();
+            // renderTaskList();
         }
     });
 
@@ -340,7 +360,7 @@
               type: 'REMOVE_TODO',
               id: id
             });
-            renderTaskList();
+            // renderTaskList();
         }
         if(e.target.className == 'checkbox-dummy') {
             var id = e.target.parentElement.htmlFor.replace('ID_', '');
@@ -348,7 +368,7 @@
               type: 'TOGGLE_TASK',
               id: id
             });
-            renderTaskList();
+            // renderTaskList();
         }
         if(e.target.className == 'content') {
             e.preventDefault();
@@ -371,7 +391,7 @@
           id: id,
           name: value
         });
-        renderTaskList();
+        // renderTaskList();
     });
 
     document.getElementById('filter').addEventListener('click', function(e) {
@@ -395,7 +415,7 @@
                 });
                 break;
         }
-        renderTaskList();
+        // renderTaskList();
     });
 
 
@@ -415,18 +435,27 @@
                 type: 'SET_CATEGORY',
                 id: id
             });
-            renderTaskList();
+            // renderTaskList();
+        }
+        if(e.target.className === 'cat-remove') {
+            var id = parseInt(e.target.parentNode.id.replace('cat_', ''));
+            newApp.dispatch({
+                type: 'REMOVE_LIST',
+                id: id
+            });
+            // renderTaskList();
         }
     });
 
-    document.getElementById('add-list').addEventListener('click', function() {
-        var category = prompt('Category Name?');
+    document.getElementById('add-list').addEventListener('click', function(e) {
+        e.preventDefault();
+        var category = prompt('List Name?');
         if(category) {
             newApp.dispatch({
                 type: 'CREATE_CATEGORY',
                 name: category
             });
-            renderTaskList();
+            // renderTaskList();
         }
     });
 
