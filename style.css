@@ -11,9 +11,12 @@ body {
     margin: 0;
     padding: 0;
     min-height: 100%;
-    overflow: hidden;
     -webkit-transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
     transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+body.open-drawer {
+    overflow: hidden;
 }
 
 h1 {
@@ -31,6 +34,7 @@ h2 {
     box-shadow: rgba(0, 0, 0, 0.117647) 0px 1px 6px, rgba(0, 0, 0, 0.117647) 0px 1px 4px;
     margin: 0;
     padding: 12px 24px 11px;
+    height: 51px;
     display: -webkit-box;
     display: flex;
     -webkit-box-align: center;
@@ -81,10 +85,7 @@ h2 {
     border-top: 0;
 }
 
-#TodoList ul {
-    overflow: auto;
-    max-height: 65vh;
-}
+
 input[type="text"] {
     background-color: #fff;
     padding: 16px 24px;
@@ -415,8 +416,16 @@ span.label:after {
     display: inline-block;
 }
 
+#search {
+    margin-left: auto;
+}
+
 
 @media screen and (min-width: 780px) {
+
+    body {
+        overflow: hidden;
+    }
 
     body.open-drawer {
         padding-left: 256px;
@@ -429,6 +438,11 @@ span.label:after {
         padding-top: 72px;
     }
 
+    #TodoList ul {
+        overflow: auto;
+        max-height: 65vh;
+    }
+
     .remove-item {
         opacity: 0;
     }
@@ -436,7 +450,8 @@ span.label:after {
         opacity: 1;
     }
 
-    .cat-remove {
+    .cat-remove,
+    #drawer-close {
         display: none;
     }
     .cat-remove:hover {

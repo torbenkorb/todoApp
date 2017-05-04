@@ -225,8 +225,6 @@
         console.log('Too bad, no localStorage for us');
     }
 
-    // window.newApp = newApp;
-
     function renderTaskList() {
         var collection;
         var listTitle;
@@ -376,18 +374,18 @@
               name: userInput,
               listID: category
             });
-            // renderTaskList();
         }
     });
 
     TodoListElement.addEventListener('click', function(e) {
         if(e.target.className == 'remove-item') {
             var id = e.target.parentElement.id.replace('item_', '');
-            newApp.dispatch({
-              type: 'REMOVE_TODO',
-              id: id
-            });
-            // renderTaskList();
+            if(confirm('You really want to delete this todo item?')) {
+                newApp.dispatch({
+                  type: 'REMOVE_TODO',
+                  id: id
+                });
+            }
         }
         if(e.target.className == 'checkbox-dummy') {
             var id = e.target.parentElement.htmlFor.replace('ID_', '');
@@ -395,7 +393,6 @@
               type: 'TOGGLE_TASK',
               id: id
             });
-            // renderTaskList();
         }
         if(e.target.className == 'content') {
             e.preventDefault();
@@ -418,7 +415,6 @@
           id: id,
           name: value
         });
-        // renderTaskList();
     });
 
     document.getElementById('filter').addEventListener('click', function(e) {
@@ -442,7 +438,6 @@
                 });
                 break;
         }
-        // renderTaskList();
     });
 
     function toggleDrawer() {
@@ -470,15 +465,15 @@
                 type: 'SET_CATEGORY',
                 id: id
             });
-            // renderTaskList();
         }
         if(e.target.className === 'cat-remove') {
             var id = parseInt(e.target.parentNode.id.replace('cat_', ''));
-            newApp.dispatch({
-                type: 'REMOVE_LIST',
-                id: id
-            });
-            // renderTaskList();
+            if(confirm('You really want to delete this list?')) {
+                newApp.dispatch({
+                    type: 'REMOVE_LIST',
+                    id: id
+                });
+            }
         }
     });
 
@@ -490,7 +485,6 @@
                 type: 'CREATE_LIST',
                 name: category
             });
-            // renderTaskList();
         }
     });
 
