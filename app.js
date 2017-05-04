@@ -1,18 +1,27 @@
 (function() {
     'use strict';
 
+
+    // Todos:
+    // - Remove String/Number in visibilityFilter.category and set to 0 for all tasks
+
     var TodoListElement = document.getElementById('TodoList');
     var initialState = {
-        todos: {},
+        todos: {
+            byID: {},
+            allIDs: [],
+            nextTodoId: 1,
+        },
         visibilityFilter: {
             history: 'SHOW_ALL',
             category: 'ALL'
         },
-        nextTodoId: 1,
         lists: {
-            1: 'Inbox'
+            byID: {},
+            allIDs: [],
+            nextListId: 1
         },
-        nextListId: 2
+
     };
 
     if(withDevTools()) {
@@ -39,6 +48,21 @@
 
     function updateObject(oldObject, newValues) {
         return Object.assign({}, oldObject, newValues);
+    }
+
+    function updateItemInArray(array, itemId, updateItemCallback) {
+        const updatedItems = array.map(item => {
+            if(item.id !== itemId) {
+                // Since we only want to update one item, preserve all others as they are now
+                return item;
+            }
+
+            // Use the provided callback to create an updated item
+            const updatedItem = updateItemCallback(item);
+            return updatedItem;
+        });
+
+        return updatedItems;
     }
 
     var createStore = function(reducer, state) {
@@ -77,70 +101,109 @@
     };
 
     function addTodo(state, action) {
-        var id = state.nextTodoId;
+        var id = state.todos.nextTodoId;
+        var listID = action.listID || 1;
         var todo = {
           [id]: {
             id: id,
             name: action.name,
             completed: false,
             created: Date.now(),
-            listID: action.listID || 1
+            listID: listID
           }
         };
-        var newTodos = updateObject(state.todos, todo);
-
         return updateObject(state, {
-          todos: newTodos,
-          nextTodoId: id + 1
+          todos: updateObject(state.todos, {
+            byID: updateObject(state.todos.byID, todo),
+            allIDs: state.todos.allIDs.concat(id),
+            nextTodoId: id + 1
+          }),
+          lists: updateObject(state.lists, {
+            byID: updateObject(state.lists.byID, {
+                [listID]: updateObject(state.lists.byID[listID], {
+                    todos: state.lists.byID[listID].todos.concat(id)
+                })
+            })
+          })
         });
     }
 
     function updateTodo(state, action) {
         var todo = {
-          [action.id]: updateObject(state.todos[action.id], { name: action.name })
+          [action.id]: updateObject(state.todos.byID[action.id], { name: action.name })
         }
-        return updateObject(state, { todos: updateObject(state.todos, todo) });
+        return updateObject(state, {
+            todos: updateObject(state.todos, {
+                byID: updateObject(state.todos.byID, todo)
+            })
+        });
     }
 
     function removeTodo(state, action) {
-        var todos = Object.assign({}, state.todos);
+        var todos = Object.assign({}, state.todos.byID);
+        var todoIDs = Object.assign([], state.todos.allIDs);
         delete todos[action.id];
-        return updateObject(state, { todos: todos });
+        return updateObject(state, {
+            todos: updateObject(state.todos, {
+                byID: todos,
+                allIDs: todoIDs.filter(function(item) { return item != action.id })
+            })
+        });
     }
 
     function toggleTask(state, action) {
         var todo = {
-            [action.id]: Object.assign({}, state.todos[action.id], {
-                completed: !state.todos[action.id].completed
+            [action.id]: Object.assign({}, state.todos.byID[action.id], {
+                completed: !state.todos.byID[action.id].completed
             })
         };
-        var todos = updateObject(state.todos, todo);
-        return updateObject(state, { todos: todos });
+        var todos = updateObject(state.todos, {
+            byID: updateObject(state.todos.byID, todo)
+        });
+        return updateObject(state, {
+            todos: todos
+        });
     }
 
     function createList(state, action) {
-        var id = state.nextListId;
+        var id = state.lists.nextListId;
         var list = {
-            [id]: action.name
+            [id]: {
+                name: action.name,
+                id: id,
+                todos: []
+            }
         };
         return updateObject(state, {
-            lists: updateObject(state.lists, list),
-            nextListId: id + 1
+            lists: updateObject(state.lists, {
+                byID: updateObject(state.lists.byID, list),
+                allIDs: state.lists.allIDs.concat(id),
+                nextListId: id + 1
+            }),
+
         });
     }
 
     function removeList(state, action) {
-        var lists = Object.assign({}, state.lists);
+        var lists = Object.assign({}, state.lists.byID);
+        var todos = Object.assign({}, state.todos.byID);
+        var listIDs = Object.assign([], state.lists.allIDs);
+        var todoIDs = Object.assign([], state.todos.allIDs);
         delete lists[action.id];
-        var todos = Object.assign({}, state.todos);
         for (var key in todos) {
             if(todos[key].listID === action.id) {
                 delete todos[key];
             }
         }
         return updateObject(state, {
-            lists: lists,
-            todos: todos
+            lists: updateObject(state.lists, {
+                byID: lists,
+                allIDs: listIDs.filter(function(listID) { return listID != action.id })
+            }),
+            todos: updateObject(state.todos, {
+                byID: todos,
+                allIDs: todoIDs.filter(function(todoID) { return todoID != action.id})
+            })
         });
     }
 
@@ -196,6 +259,10 @@
         if(!localStorage.getItem('TodoApp')) {
             var newApp = createStore(reducer);
             newApp.dispatch({
+                type:'CREATE_LIST',
+                name: 'Inbox'
+            });
+            newApp.dispatch({
               type: 'CREATE_TODO',
               name: 'Buy Milk'
             });
@@ -229,9 +296,10 @@
         var collection;
         var listTitle;
         var html = '';
+        var listsHTML = '';
         var visibilityClass = 'show-all';
         var state = newApp.getState();
-        var todosAsArray = Object.values(state.todos);
+        var todosAsArray = Object.values(state.todos.byID);
         var total = todosAsArray.length;
         var activeItems = todosAsArray.filter(function(item) { return item.completed === false });
         var completeItems = todosAsArray.filter(function(item) { return item.completed === true });
@@ -259,14 +327,11 @@
                 break;
         }
 
-        if(state.visibilityFilter.category !== 'ALL') {
-            collection = collection.filter(function(item) { return item.listID === parseInt(state.visibilityFilter.category) });
-        }
+        listTitle = 'All Tasks';
 
         if(state.visibilityFilter.category !== 'ALL') {
-            listTitle = state.lists[state.visibilityFilter.category];
-        } else {
-            listTitle = 'All Tasks';
+            collection = collection.filter(function(item) { return item.listID === parseInt(state.visibilityFilter.category) });
+            listTitle = state.lists.byID[parseInt(state.visibilityFilter.category)].name;
         }
 
         html += '<h2>' + listTitle + '</h2>';
@@ -290,7 +355,7 @@
 
 
             html += '<span class="label">';
-            html += state.lists[item.listID];
+            html += state.lists.byID[item.listID].name;
             html += '</span>';
 
             html += '<div class="remove-item">&times;</div>';
@@ -312,34 +377,42 @@
         filterContainer.classList.remove('show-all', 'show-completed', 'show-active');
         filterContainer.classList.add(visibilityClass);
 
+        var listCollection = Object.assign([], state.lists.allIDs);
+        listCollection.forEach(function(listID) {
+            var listActive = state.lists.byID[listID].todos.filter(function(todo) {
+                return state.todos.byID[todo].completed === false;
+            });
 
+            listsHTML += '<li id="cat_' + listID + '"';
+            if(listID === state.visibilityFilter.category) {
+                listsHTML += ' class="active"';
+            }
+            listsHTML += '>';
+            listsHTML += state.lists.byID[listID].name;
+            // Refactor the length to get just the active items
+            listsHTML += ' <span class="cat-count">' + listActive.length + '</span>';
+            if(listID !== 1) {
+                listsHTML += '<span class="cat-remove">&times;</span>';
+            }
+            listsHTML += '</li>';
+        });
 
-        var categories = '';
-        for(var categoryID in state.lists) {
-            var tasksInCategory = todosAsArray.filter(function(item) { return item.listID === parseInt(categoryID) && item.completed === false });
-            var tasksCount = tasksInCategory.length;
-            categories += '<li id="cat_' + categoryID + '"';
-            if(categoryID === state.visibilityFilter.category) {
-                categories += ' class="active"';
-            }
-            categories += '>'
-            categories += state.lists[categoryID];
-            categories += ' <span class="cat-count">' + tasksCount + '</span>';
-            if(parseInt(categoryID) !== 1) {
-                categories += '<span class="cat-remove">&times;</span>';
-            }
-            categories += '</li>';
-        }
-        categories += '<li id="cat_ALL"';
+        listsHTML += '<li id="cat_ALL"';
         if(state.visibilityFilter.category === 'ALL') {
-            categories += ' class="active"';
+            listsHTML += ' class="active"';
         }
-        categories += '>All Tasks <span class="cat-count">' + activeItems.length + '</span></li>';
-        document.getElementById('categories').innerHTML = categories;
+        listsHTML += '>All Tasks <span class="cat-count">' + activeItems.length + '</span></li>';
+
+        document.getElementById('categories').innerHTML = listsHTML;
     }
 
     function renderApp() {
         renderTaskList();
+    }
+
+    function toggleDrawer() {
+        var body = document.getElementsByTagName('body')[0];
+        body.classList.toggle('open-drawer');
     }
 
     function storageAvailable(type) {
@@ -440,12 +513,6 @@
         }
     });
 
-    function toggleDrawer() {
-        var body = document.getElementsByTagName('body')[0];
-        body.classList.toggle('open-drawer');
-    }
-
-
     document.getElementById('drawer-open').addEventListener('click', function() {
         toggleDrawer();
     });
@@ -468,11 +535,19 @@
         }
         if(e.target.className === 'cat-remove') {
             var id = parseInt(e.target.parentNode.id.replace('cat_', ''));
-            if(confirm('You really want to delete this list?')) {
+            var state = newApp.getState();
+            if(confirm('You really want to delete the list "' + state.lists.byID[id].name + '"?')) {
+                if(parseInt(state.visibilityFilter.category) === id) {
+                    newApp.dispatch({
+                        type: 'SET_CATEGORY',
+                        id: 1
+                    });
+                }
                 newApp.dispatch({
                     type: 'REMOVE_LIST',
                     id: id
                 });
+
             }
         }
     });
