@@ -37,6 +37,10 @@
       }
     }
 
+    function updateObject(oldObject, newValues) {
+        return Object.assign({}, oldObject, newValues);
+    }
+
     var createStore = function(reducer, state) {
       var subscribers = [];
       if(state === undefined) {
@@ -72,102 +76,118 @@
       }
     };
 
+    function addTodo(state, action) {
+        var id = state.nextTodoId;
+        var todo = {
+          [id]: {
+            id: id,
+            name: action.name,
+            completed: false,
+            created: Date.now(),
+            listID: action.listID || 1
+          }
+        };
+        var newTodos = updateObject(state.todos, todo);
+
+        return updateObject(state, {
+          todos: newTodos,
+          nextTodoId: id + 1
+        });
+    }
+
+    function updateTodo(state, action) {
+        var todo = {
+          [action.id]: updateObject(state.todos[action.id], { name: action.name })
+        }
+        return updateObject(state, { todos: updateObject(state.todos, todo) });
+    }
+
+    function removeTodo(state, action) {
+        var todos = Object.assign({}, state.todos);
+        delete todos[action.id];
+        return updateObject(state, { todos: todos });
+    }
+
+    function toggleTask(state, action) {
+        var todo = {
+            [action.id]: Object.assign({}, state.todos[action.id], {
+                completed: !state.todos[action.id].completed
+            })
+        };
+        var todos = updateObject(state.todos, todo);
+        return updateObject(state, { todos: todos });
+    }
+
+    function createList(state, action) {
+        var id = state.nextListId;
+        var list = {
+            [id]: action.name
+        };
+        return updateObject(state, {
+            lists: updateObject(state.lists, list),
+            nextListId: id + 1
+        });
+    }
+
+    function removeList(state, action) {
+        var lists = Object.assign({}, state.lists);
+        delete lists[action.id];
+        var todos = Object.assign({}, state.todos);
+        for (var key in todos) {
+            if(todos[key].listID === action.id) {
+                delete todos[key];
+            }
+        }
+        return updateObject(state, {
+            lists: lists,
+            todos: todos
+        });
+    }
+
+    function setVisibilityFilter(state, action) {
+        return updateObject(state, {
+            visibilityFilter: updateObject(state.visibilityFilter, {
+                history: action.filter
+            })
+        });
+    }
+
+    function setCategory(state, action) {
+        return updateObject(state, {
+            visibilityFilter: updateObject(state.visibilityFilter, {
+                category: action.id
+            })
+        });
+    }
+
     var reducer = function(state, action) {
       switch(action.type) {
         case 'CREATE_TODO':
-          var id = state.nextTodoId;
-          var todo = {
-            [id]: {
-              id: id,
-              name: action.name,
-              completed: false,
-              created: Date.now(),
-              listID: action.listID || 1
-            }
-          };
-          return Object.assign({}, state, {
-            todos: Object.assign({}, state.todos, todo),
-            nextTodoId: id + 1
-          });
-          break;
+            return addTodo(state, action);
 
         case 'UPDATE_TODO':
-          var todo = {
-            [action.id]: Object.assign({}, state.todos[action.id], {
-              name: action.name
-            })
-          }
-          return Object.assign({}, state, {
-            todos: Object.assign({}, state.todos, todo)
-          });
-          break;
+            return updateTodo(state, action);
 
         case 'REMOVE_TODO':
-          var todos = state.todos;
-          delete todos[action.id];
-          return Object.assign({}, state, {
-            todos: todos
-          });
-          break;
+            return removeTodo(state, action);
 
         case 'TOGGLE_TASK':
-            var todo = {
-                [action.id]: Object.assign({}, state.todos[action.id], {
-                    completed: !state.todos[action.id].completed
-                })
-            };
-            return Object.assign({}, state, {
-                todos: Object.assign({}, state.todos, todo)
-            });
-            break;
+            return toggleTask(state, action);
 
-        case 'CREATE_CATEGORY':
-            var id = state.nextListId;
-            console.log(id);
-            var list = {
-                [id]: action.name
-            };
-            return Object.assign({}, state, {
-                lists: Object.assign({}, state.lists, list),
-                nextListId: id + 1
-            });
-            break;
+        case 'CREATE_LIST':
+            return createList(state, action);
 
         case 'REMOVE_LIST':
-            var lists = Object.assign({}, state.lists);
-            delete lists[action.id];
-            var todos = Object.assign({}, state.todos);
-            for (var key in todos) {
-                if(todos[key].listID === action.id) {
-                    delete todos[key];
-                }
-            }
-            return Object.assign({}, state, {
-                lists: lists,
-                todos: todos
-            });
-            break;
+            return removeList(state, action);
 
         case 'SET_VISIBILITY_FILTER':
-            var filter = {
-                history: action.filter
-            };
-            return Object.assign({}, state, {
-                visibilityFilter: Object.assign({}, state.visibilityFilter, filter)
-            });
-            break;
+            return setVisibilityFilter(state, action);
 
         case 'SET_CATEGORY':
-            var filter = {
-                category: action.id
-            };
-            return Object.assign({}, state, {
-                visibilityFilter: Object.assign({}, state.visibilityFilter, filter)
-            });
+            return setCategory(state, action);
 
         default:
           return state;
-          break;
       }
     };
 
@@ -180,7 +200,7 @@
               name: 'Buy Milk'
             });
             newApp.dispatch({
-                type:'CREATE_CATEGORY',
+                type:'CREATE_LIST',
                 name: 'Work'
             });
             newApp.dispatch({
@@ -205,7 +225,7 @@
         console.log('Too bad, no localStorage for us');
     }
 
-    window.newApp = newApp;
+    // window.newApp = newApp;
 
     function renderTaskList() {
         var collection;
@@ -425,10 +445,18 @@
         // renderTaskList();
     });
 
-
-    document.getElementById('drawer-open').addEventListener('click', function() {
+    function toggleDrawer() {
         var body = document.getElementsByTagName('body')[0];
         body.classList.toggle('open-drawer');
+    }
+
+
+    document.getElementById('drawer-open').addEventListener('click', function() {
+        toggleDrawer();
+    });
+
+    document.getElementById('drawer-close').addEventListener('click', function() {
+        toggleDrawer();
     });
 
     document.getElementById('print').addEventListener('click', function() {
@@ -459,7 +487,7 @@
         var category = prompt('List Name?');
         if(category) {
             newApp.dispatch({
-                type: 'CREATE_CATEGORY',
+                type: 'CREATE_LIST',
                 name: category
             });
             // renderTaskList();

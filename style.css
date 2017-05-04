@@ -62,10 +62,8 @@ h2 {
 }
 
 #TodoApp {
-    // width: 90%;
-    // max-width: 780px;
-    // margin: 0 auto;
-    // padding-top: 72px;
+    max-width: 90%;
+    margin: 1em auto;
 }
 
 #TodoList {
@@ -171,10 +169,6 @@ li:hover {
     background-color: #fafafa;
 }
 
-li:hover .remove-item {
-    opacity: 1;
-}
-
 ul form {
     display: inline-block;
     width: 80%;
@@ -217,7 +211,6 @@ ul input[type="text"] {
     color: rgba(0,0,0,0.37);
     -webkit-transition: .2s;
     transition: .2s;
-    opacity: 0;
 }
 
 .remove-item:hover {
@@ -228,7 +221,7 @@ ul input[type="text"] {
     background-color: #f8f8f8;
     border-top: 1px solid rgba(0,0,0,0.12);
     color: rgba(0,0,0,0.54);
-    font-size: .85rem;
+    font-size: .8rem;
     padding: 16px 24px;
     display: -webkit-box;
     display: flex;
@@ -322,9 +315,7 @@ span.label:after {
     -webkit-transform: translate(0, 0px);
             transform: translate(0, 0px);
 }
-body.open-drawer {
-    padding-left: 256px;
-}
+
 
 .drawer-title {
     border-bottom: 1px solid rgba(0,0,0,0.12);
@@ -333,6 +324,7 @@ body.open-drawer {
     display: flex;
     -webkit-box-align: center;
             align-items: center;
+    padding: 24px 18px 24px 0;
 }
 
 #categories {
@@ -356,6 +348,7 @@ body.open-drawer {
     padding: 24px;
     text-decoration: none;
     color: rgba(0,0,0,0.54);
+    font-size: .8rem;
 }
 
 #add-list:hover {
@@ -370,7 +363,6 @@ body.open-drawer {
     font-family: 'Material Icons';
     font-weight: normal;
     font-style: normal;
-    font-size: 24px;  /* Preferred icon size */
     display: inline-block;
     line-height: 1;
     text-transform: none;
@@ -393,8 +385,8 @@ body.open-drawer {
 
     display: inline-block;
     vertical-align: middle;
-    margin-left: -8px;
-    margin-right: 8px;
+    margin-left: -4px;
+    margin-right: 4px;
 }
 
 #print,
@@ -415,13 +407,9 @@ body.open-drawer {
     text-align: center;
     height: 24px;
     line-height: 24px;
-    display: none;
     color: rgba(0,0,0,0.34);
 }
 
-.cat-remove:hover {
-    color: initial;
-}
 
 #categories li:hover .cat-remove {
     display: inline-block;
@@ -430,11 +418,29 @@ body.open-drawer {
 
 @media screen and (min-width: 780px) {
 
+    body.open-drawer {
+        padding-left: 256px;
+    }
+
     #TodoApp {
         width: 90%;
         max-width: 780px;
         margin: 0 auto;
         padding-top: 72px;
+    }
+
+    .remove-item {
+        opacity: 0;
+    }
+    li:hover .remove-item {
+        opacity: 1;
+    }
+
+    .cat-remove {
+        display: none;
+    }
+    .cat-remove:hover {
+        color: initial;
     }
 }
 
