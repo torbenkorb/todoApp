@@ -21,7 +21,8 @@
             allIDs: [],
             nextListId: 1
         },
-
+        notifications: [],
+        activities: []
     };
 
     if(withDevTools()) {
@@ -124,30 +125,41 @@
                     todos: state.lists.byID[listID].todos.concat(id)
                 })
             })
-          })
+          }),
+          activities: state.activities.concat('You created a new task: ' + action.name)
         });
     }
 
     function updateTodo(state, action) {
         var todo = {
           [action.id]: updateObject(state.todos.byID[action.id], { name: action.name })
-        }
+        };
         return updateObject(state, {
             todos: updateObject(state.todos, {
                 byID: updateObject(state.todos.byID, todo)
-            })
+            }),
+            activities: state.activities.concat('You changed the task name from ' + state.todos.byID[action.id].name + ' to ' + action.name)
         });
     }
 
     function removeTodo(state, action) {
         var todos = Object.assign({}, state.todos.byID);
         var todoIDs = Object.assign([], state.todos.allIDs);
+        var listID = todos[action.id].listID;
         delete todos[action.id];
         return updateObject(state, {
             todos: updateObject(state.todos, {
                 byID: todos,
                 allIDs: todoIDs.filter(function(item) { return item != action.id })
-            })
+            }),
+            lists: updateObject(state.lists, {
+                byID: updateObject(state.lists.byID, {
+                    [listID]: updateObject(state.lists.byID[listID], {
+                        todos: state.lists.byID[listID].todos.filter(function(item) { return item != action.id })
+                    })
+                })
+            }),
+            activities: state.activities.concat('You removed a task: ' + state.todos.byID[action.id].name)
         });
     }
 
@@ -160,8 +172,16 @@
         var todos = updateObject(state.todos, {
             byID: updateObject(state.todos.byID, todo)
         });
+        var message = 'Sie haben eine Aufgabe ';
+        if(!state.todos.byID[action.id].completed) {
+            message += 'erledigt: ';
+        } else {
+            message += 'als unerledigt markiert: ';
+        }
+        message += state.todos.byID[action.id].name;
         return updateObject(state, {
-            todos: todos
+            todos: todos,
+            activities: state.activities.concat(message)
         });
     }
 
@@ -180,7 +200,7 @@
                 allIDs: state.lists.allIDs.concat(id),
                 nextListId: id + 1
             }),
-
+            activities: state.activities.concat('You created a new list: ' + action.name)
         });
     }
 
@@ -202,8 +222,9 @@
             }),
             todos: updateObject(state.todos, {
                 byID: todos,
-                allIDs: todoIDs.filter(function(todoID) { return todoID != action.id})
-            })
+                allIDs: todoIDs.filter(function(todoID) { return state.todos.byID[todoID].listID != action.id})
+            }),
+            activities: state.activities.concat('You removed a list: ' + state.lists.byID[action.id].name)
         });
     }
 
@@ -220,6 +241,12 @@
             visibilityFilter: updateObject(state.visibilityFilter, {
                 category: action.id
             })
+        });
+    }
+
+    function addNotification(state, action) {
+        return updateObject(state, {
+            notifications: state.notifications.concat(action.message)
         });
     }
 
@@ -248,6 +275,9 @@
 
         case 'SET_CATEGORY':
             return setCategory(state, action);
+
+        case 'ADD_NOTIFICATION':
+            return addNotification(state, action);
 
         default:
           return state;
@@ -296,7 +326,6 @@
         var collection;
         var listTitle;
         var html = '';
-        var listsHTML = '';
         var visibilityClass = 'show-all';
         var state = newApp.getState();
         var todosAsArray = Object.values(state.todos.byID);
@@ -338,7 +367,7 @@
         html += '<ul>';
 
         collection.forEach(function(item) {
-            html += '<li id="item_' + item.id + '"';
+            html += '<li draggable="true" id="item_' + item.id + '"';
             if(item.completed) {
               html += ' class="completed"';
             }
@@ -377,19 +406,47 @@
         filterContainer.classList.remove('show-all', 'show-completed', 'show-active');
         filterContainer.classList.add(visibilityClass);
 
+        renderListsInDrawer();
+
+        if(state.notifications.length > 0) {
+            renderNotifications();
+        }
+    }
+
+    function renderNotifications() {
+        var state = newApp.getState();
+        document.querySelector('#notification-container .badge').innerHTML = '<span>' + state.notifications.length + '</span>';
+
+        var notificationHTML = '<ul>';
+        state.notifications.forEach(function(message) {
+            notificationHTML += '<li>' + message + '</li>';
+        });
+        notificationHTML += '</ul>';
+        document.querySelector('.dropdown').innerHTML = notificationHTML;
+
+    }
+
+    function renderListsInDrawer() {
+        var state = newApp.getState();
+        var listsHTML = '';
+        var activeItems = state.todos.allIDs.filter(function(todo) {
+            return state.todos.byID[todo].completed === false;
+        });
+
         var listCollection = Object.assign([], state.lists.allIDs);
+
         listCollection.forEach(function(listID) {
+
             var listActive = state.lists.byID[listID].todos.filter(function(todo) {
                 return state.todos.byID[todo].completed === false;
             });
 
             listsHTML += '<li id="cat_' + listID + '"';
-            if(listID === state.visibilityFilter.category) {
+            if(listID === parseInt(state.visibilityFilter.category)) {
                 listsHTML += ' class="active"';
             }
             listsHTML += '>';
             listsHTML += state.lists.byID[listID].name;
-            // Refactor the length to get just the active items
             listsHTML += ' <span class="cat-count">' + listActive.length + '</span>';
             if(listID !== 1) {
                 listsHTML += '<span class="cat-remove">&times;</span>';
@@ -402,7 +459,6 @@
             listsHTML += ' class="active"';
         }
         listsHTML += '>All Tasks <span class="cat-count">' + activeItems.length + '</span></li>';
-
         document.getElementById('categories').innerHTML = listsHTML;
     }
 
@@ -561,6 +617,10 @@
                 name: category
             });
         }
+    });
+
+    document.getElementById('notification-container').addEventListener('click', function(e) {
+        document.querySelector('.dropdown').classList.toggle('show');
     });
 
     renderTaskList();
