@@ -394,6 +394,20 @@
         TodoListElement.innerHTML = html;
 
 
+        var visibleList = state.visibilityFilter.category !== 'ALL' ? state.visibilityFilter.category : 0;
+
+        var activeCollection = visibleList !== 0 ? state.lists.byID[visibleList].todos : state.todos.allIDs;
+
+        activeCollection = activeCollection.filter(function(id) {
+            return state.todos.byID[id].completed !== true;
+        });
+
+
+
+        document.getElementById('tools-headline').innerHTML = listTitle;
+        document.getElementById('active-count').innerHTML = activeCollection.length;
+
+
         if(activeItems.length === 0) {
             if(completeItems.length > 0) {
                 stats = 'Congratulations! All Tasks completed!';

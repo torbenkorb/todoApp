@@ -12,6 +12,7 @@
   <header>
     <div class="site-header">
       <i class="material-icons" id="drawer-open">menu</i>
+      <h1>Todos</h1>
       <i class="material-icons" id="search">search</i>
       <span id="notification-container">
         <i class="material-icons" id="notifications">notifications</i>
@@ -22,6 +23,14 @@
       </span>
       <i class="material-icons" id="print">print</i>
     </div>
+    <div class="list-tools">
+      <h2>
+        <span id="tools-headline">Headline</span>
+        <small><span id="active-count">7</span> active tasks</small></h2>
+      <div class="list-tools-filter">
+        Active <i class="material-icons">arrow_drop_down</i>
+      </div>
+    </div>
   </header>
   <div id="TodoApp">
       <div class="drawer" id="drawer">
@@ -29,6 +38,7 @@
           <h1>TodoApp</h1>
           <i id="drawer-close" class="material-icons">close</i>
         </div>
+        <h4>Lists</h4>
         <ul id="categories"></ul>
         <div >
           <a id="add-list" href="">Add List</a>
@@ -48,6 +58,7 @@
               </div>
           </div>
       </div>
+      <ul id="test"></ul>
   </div>
   <script type="text/javascript" src="app.js"></script>
 </body>
