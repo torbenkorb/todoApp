@@ -27,8 +27,16 @@
       <h2>
         <span id="tools-headline">Headline</span>
         <small><span id="active-count">7</span> active tasks</small></h2>
-      <div class="list-tools-filter">
-        Active <i class="material-icons">arrow_drop_down</i>
+      <div id="list-filter" class="list-tools-filter">
+        <span id="list-filter-label">Active</span>
+        <i class="material-icons">keyboard_arrow_down</i>
+        <div id="filter-dropdown" class="dropdown">
+          <ul>
+            <li id="show-all">Show All</li>
+            <li id="show-active">Show Active</li>
+            <li id="show-completed">Show Completed</li>
+          </ul>
+        </div>
       </div>
     </div>
   </header>
@@ -49,14 +57,6 @@
       </form>
       <div class="todolist-wrapper">
           <div id="TodoList"></div>
-          <div id="list-bottom" class="bottom">
-              <div id="items-left"></div>
-              <div id="filter">
-                  <div class="button" id="show-all">Show All</div>
-                  <div class="button" id="show-active">Show Active</div>
-                  <div class="button" id="show-completed">Show Completed</div>
-              </div>
-          </div>
       </div>
       <ul id="test"></ul>
   </div>

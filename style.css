@@ -287,6 +287,19 @@ ul input[type="text"] {
     color: rgba(0,0,0,0.87);
 }
 
+
+#filter-dropdown .show-all li:nth-of-type(1) {
+    background-color: #f4f4f4;
+}
+
+#filter-dropdown .show-active li:nth-of-type(2) {
+    background-color: #f4f4f4;
+}
+
+#filter-dropdown .show-completed li:nth-of-type(3) {
+    background-color: #f4f4f4;
+}
+
 span.label {
     font-size: .8rem;
     display: inline-block;
@@ -351,13 +364,21 @@ span.label:after {
 
 #categories li {
     cursor: pointer;
-    display: list-item;
+    display: -webkit-box;
+    display: flex;
+    -webkit-box-align: center;
+            align-items: center;
     padding: 12px 24px;
     border: 0;
 }
 
 #categories li.active {
     background-color: #f8f8f8;
+}
+
+#categories li i {
+    margin-right: 8px;
+    color: rgba(0,0,0,0.54);
 }
 
 #add-list {
@@ -529,10 +550,17 @@ span.label:after {
 
 .list-tools-filter {
     margin-left: auto;
+    position: relative;
+    display: -webkit-box;
+    display: flex;
+    -webkit-box-align: center;
+            align-items: center;
 }
 
 .list-tools-filter i {
     vertical-align: sub;
+    font-size: 16px;
+    margin-left: 8px;
 }
 
 .list-tools small {
@@ -549,6 +577,18 @@ span.label:after {
     position: absolute;
     top: -8px;
     left: 0;
+}
+
+#filter-dropdown {
+    z-index: 900;
+}
+
+#filter-dropdown li {
+    cursor: pointer;
+}
+
+#list-filter {
+    cursor: pointer;
 }
 
 

@@ -327,22 +327,23 @@
         var listTitle;
         var html = '';
         var visibilityClass = 'show-all';
+        var filterLabel = 'All Tasks';
         var state = newApp.getState();
         var todosAsArray = Object.values(state.todos.byID);
         var total = todosAsArray.length;
         var activeItems = todosAsArray.filter(function(item) { return item.completed === false });
         var completeItems = todosAsArray.filter(function(item) { return item.completed === true });
-        var stats = activeItems.length + ' items left';
-        var filterContainer = document.getElementById('filter');
 
         switch(state.visibilityFilter.history) {
             case 'SHOW_COMPLETED':
                 collection = completeItems;
                 visibilityClass = 'show-completed';
+                filterLabel = 'Completed Tasks';
                 break;
             case 'SHOW_ACTIVE':
                 collection = activeItems;
                 visibilityClass = 'show-active';
+                filterLabel = 'Active Tasks';
                 break;
             default:
                 collection = todosAsArray;
@@ -363,7 +364,6 @@
             listTitle = state.lists.byID[parseInt(state.visibilityFilter.category)].name;
         }
 
-        html += '<h2>' + listTitle + '</h2>';
         html += '<ul>';
 
         collection.forEach(function(item) {
@@ -402,29 +402,20 @@
             return state.todos.byID[id].completed !== true;
         });
 
-
-
         document.getElementById('tools-headline').innerHTML = listTitle;
         document.getElementById('active-count').innerHTML = activeCollection.length;
-
-
-        if(activeItems.length === 0) {
-            if(completeItems.length > 0) {
-                stats = 'Congratulations! All Tasks completed!';
-            } else {
-                stats = 'Start Your Productivity! Add some tasks now.';
-            }
-        }
-        document.getElementById('items-left').innerHTML = stats;
-
-        filterContainer.classList.remove('show-all', 'show-completed', 'show-active');
-        filterContainer.classList.add(visibilityClass);
 
         renderListsInDrawer();
 
         if(state.notifications.length > 0) {
             renderNotifications();
         }
+
+
+        document.querySelector('#filter-dropdown ul').classList.remove('show-all', 'show-completed', 'show-active');
+        document.querySelector('#filter-dropdown ul').classList.add(visibilityClass);
+        document.querySelector('#list-filter-label').innerText = filterLabel;
+
     }
 
     function renderNotifications() {
@@ -460,6 +451,9 @@
                 listsHTML += ' class="active"';
             }
             listsHTML += '>';
+            if(listID === 1) {
+                listsHTML += '<i class="material-icons">inbox</i>';
+            }
             listsHTML += state.lists.byID[listID].name;
             listsHTML += ' <span class="cat-count">' + listActive.length + '</span>';
             if(listID !== 1) {
@@ -477,6 +471,7 @@
     }
 
     function renderApp() {
+        var state = newApp.getState();
         renderTaskList();
     }
 
@@ -560,7 +555,8 @@
         });
     });
 
-    document.getElementById('filter').addEventListener('click', function(e) {
+    document.getElementById('filter-dropdown').addEventListener('click', function(e) {
+        console.log(e);
         switch(e.target.id) {
             case 'show-all':
                 newApp.dispatch({
@@ -634,7 +630,11 @@
     });
 
     document.getElementById('notification-container').addEventListener('click', function(e) {
-        document.querySelector('.dropdown').classList.toggle('show');
+        document.querySelector('#notification-container .dropdown').classList.toggle('show');
+    });
+
+    document.getElementById('list-filter').addEventListener('click', function(e) {
+        document.querySelector('#list-filter .dropdown').classList.toggle('show');
     });
 
     renderTaskList();
