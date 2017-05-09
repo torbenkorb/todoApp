@@ -17,7 +17,7 @@ html {
 
 body {
     font: 1em 'Roboto', sans-serif;
-    background-color: #fafafa;
+    background-color: #EFF3F6;
     color: rgba(0,0,0,0.87);
     margin: 0;
     padding: 0;
@@ -467,20 +467,21 @@ span.label:after {
 
 #notification-container .badge {
     position: absolute;
-    top: -4px;
-    right: -8px;
+    top: -7px;
+    right: -11px;
 }
 
 #notification-container span {
     background-color: #FF7800;
     display: inline-block;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     font-size: .8rem;
     color: #fff;
     text-align: center;
     line-height: 21px;
+    border: 2px solid #fff;
 }
 
 .dropdown {
@@ -589,6 +590,10 @@ span.label:after {
 
 #list-filter {
     cursor: pointer;
+}
+
+#show-activities {
+    padding: 24px;
 }
 
 

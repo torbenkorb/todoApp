@@ -2,8 +2,11 @@
     'use strict';
 
 
-    // Todos:
-    // - Remove String/Number in visibilityFilter.category and set to 0 for all tasks
+    // Todo:
+    // - Rename newApp to Store
+    // - Rename model todos => tasks and lists => tasklists
+    // - Render view by collection, keep not in state
+
 
     var TodoListElement = document.getElementById('TodoList');
     var initialState = {
@@ -14,7 +17,7 @@
         },
         visibilityFilter: {
             history: 'SHOW_ALL',
-            category: 'ALL'
+            category: 0
         },
         lists: {
             byID: {},
@@ -172,11 +175,11 @@
         var todos = updateObject(state.todos, {
             byID: updateObject(state.todos.byID, todo)
         });
-        var message = 'Sie haben eine Aufgabe ';
+        var message = 'You  ';
         if(!state.todos.byID[action.id].completed) {
-            message += 'erledigt: ';
+            message += 'completed a task: ';
         } else {
-            message += 'als unerledigt markiert: ';
+            message += 'marked a task as incompleted: ';
         }
         message += state.todos.byID[action.id].name;
         return updateObject(state, {
@@ -359,9 +362,9 @@
 
         listTitle = 'All Tasks';
 
-        if(state.visibilityFilter.category !== 'ALL') {
-            collection = collection.filter(function(item) { return item.listID === parseInt(state.visibilityFilter.category) });
-            listTitle = state.lists.byID[parseInt(state.visibilityFilter.category)].name;
+        if(state.visibilityFilter.category !== 0) {
+            collection = collection.filter(function(item) { return item.listID === state.visibilityFilter.category });
+            listTitle = state.lists.byID[state.visibilityFilter.category].name;
         }
 
         html += '<ul>';
@@ -393,8 +396,7 @@
         html += '</ul>';
         TodoListElement.innerHTML = html;
 
-
-        var visibleList = state.visibilityFilter.category !== 'ALL' ? state.visibilityFilter.category : 0;
+        var visibleList = state.visibilityFilter.category !== 0 ? state.visibilityFilter.category : 0;
 
         var activeCollection = visibleList !== 0 ? state.lists.byID[visibleList].todos : state.todos.allIDs;
 
@@ -416,6 +418,20 @@
         document.querySelector('#filter-dropdown ul').classList.add(visibilityClass);
         document.querySelector('#list-filter-label').innerText = filterLabel;
 
+    }
+
+    function renderActivities() {
+        var html = '<ul>';
+        var state = newApp.getState();
+        var collection = Object.assign([], state.activities);
+
+        collection.reverse()
+
+        collection.forEach(function(item) {
+            html += '<li>' + item + '</li>';
+        });
+
+        TodoListElement.innerHTML = html;
     }
 
     function renderNotifications() {
@@ -447,7 +463,7 @@
             });
 
             listsHTML += '<li id="cat_' + listID + '"';
-            if(listID === parseInt(state.visibilityFilter.category)) {
+            if(listID === state.visibilityFilter.category) {
                 listsHTML += ' class="active"';
             }
             listsHTML += '>';
@@ -462,13 +478,14 @@
             listsHTML += '</li>';
         });
 
-        listsHTML += '<li id="cat_ALL"';
-        if(state.visibilityFilter.category === 'ALL') {
+        listsHTML += '<li id="cat_0"';
+        if(state.visibilityFilter.category === 0) {
             listsHTML += ' class="active"';
         }
         listsHTML += '>All Tasks <span class="cat-count">' + activeItems.length + '</span></li>';
         document.getElementById('categories').innerHTML = listsHTML;
     }
+
 
     function renderApp() {
         var state = newApp.getState();
@@ -504,7 +521,7 @@
         var userInput = inputField.value;
         var state = newApp.getState();
         var category = state.visibilityFilter.category;
-        category = category === 'ALL' ? 1 : parseInt(category);
+        category = category === 0 ? 1 : category;
         inputField.value = '';
         if(userInput) {
             newApp.dispatch({
@@ -556,7 +573,6 @@
     });
 
     document.getElementById('filter-dropdown').addEventListener('click', function(e) {
-        console.log(e);
         switch(e.target.id) {
             case 'show-all':
                 newApp.dispatch({
@@ -592,18 +608,24 @@
     });
 
     document.getElementById('categories').addEventListener('click', function(e) {
+        var id = -1;
         if(e.target.tagName === 'LI') {
-            var id = e.target.id.replace('cat_', '');
+            id = parseInt(e.target.id.replace('cat_', ''));
+        } else if(e.target.parentNode.tagName === 'LI') {
+            id = parseInt(e.target.parentNode.id.replace('cat_', ''));
+        }
+        if(id !== -1) {
             newApp.dispatch({
                 type: 'SET_CATEGORY',
                 id: id
             });
         }
+        console.dir(e.target);
         if(e.target.className === 'cat-remove') {
             var id = parseInt(e.target.parentNode.id.replace('cat_', ''));
             var state = newApp.getState();
             if(confirm('You really want to delete the list "' + state.lists.byID[id].name + '"?')) {
-                if(parseInt(state.visibilityFilter.category) === id) {
+                if(state.visibilityFilter.category === id) {
                     newApp.dispatch({
                         type: 'SET_CATEGORY',
                         id: 1
@@ -628,6 +650,10 @@
             });
         }
     });
+
+    document.getElementById('show-activities').addEventListener('click', function(e) {
+        renderActivities();
+    })
 
     document.getElementById('notification-container').addEventListener('click', function(e) {
         document.querySelector('#notification-container .dropdown').classList.toggle('show');
