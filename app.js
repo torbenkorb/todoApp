@@ -663,14 +663,14 @@
         currentX = startX;
         touchingDrawer = true;
         requestAnimationFrame(updateX);
-    });
+    }, {passive: true});
 
     document.querySelector('#drawer').addEventListener('touchmove', function(e) {
         if(!touchingDrawer) {
             return;
         }
         currentX = e.touches[0].pageX;
-    });
+    }, {passive: true});
 
     document.querySelector('#drawer').addEventListener('touchend', function(e) {
         if(!touchingDrawer) {
@@ -696,6 +696,8 @@
     document.getElementById('list-filter').addEventListener('click', function(e) {
         document.querySelector('#list-filter .dropdown').classList.toggle('show');
     });
+
+
 
     function updateX() {
         if(!touchingDrawer) {
