@@ -9,6 +9,7 @@
 
 
     var TodoListElement = document.getElementById('TodoList');
+
     var initialState = {
         todos: {
             byID: {},
@@ -651,6 +652,39 @@
         }
     });
 
+
+
+    var startX = 0;
+    var currentX = 0;
+    var touchingDrawer = false;
+
+    document.querySelector('#drawer').addEventListener('touchstart', function(e) {
+        startX = e.touches[0].pageX;
+        currentX = startX;
+        touchingDrawer = true;
+        requestAnimationFrame(updateX);
+    });
+
+    document.querySelector('#drawer').addEventListener('touchmove', function(e) {
+        if(!touchingDrawer) {
+            return;
+        }
+        currentX = e.touches[0].pageX;
+    });
+
+    document.querySelector('#drawer').addEventListener('touchend', function(e) {
+        if(!touchingDrawer) {
+            return;
+        }
+        touchingDrawer = false;
+        var translateX = Math.min(0, currentX - startX);
+        document.querySelector('.drawer').style.transform = '';
+
+        if(translateX < 0) {
+            toggleDrawer();
+        }
+    });
+
     document.getElementById('show-activities').addEventListener('click', function(e) {
         renderActivities();
     })
@@ -662,6 +696,16 @@
     document.getElementById('list-filter').addEventListener('click', function(e) {
         document.querySelector('#list-filter .dropdown').classList.toggle('show');
     });
+
+    function updateX() {
+        if(!touchingDrawer) {
+            return;
+        }
+        requestAnimationFrame(updateX);
+
+        var translateX = Math.min(0, currentX - startX);
+        document.querySelector('#drawer').style.transform = `translateX(${translateX}px)`;
+    }
 
     renderTaskList();
 
