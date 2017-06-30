@@ -680,6 +680,7 @@
         var translateX = Math.min(0, currentX - startX);
         document.querySelector('.drawer').style.transform = '';
 
+
         if(translateX < 0) {
             toggleDrawer();
         }
@@ -707,6 +708,7 @@
 
         var translateX = Math.min(0, currentX - startX);
         document.querySelector('#drawer').style.transform = `translateX(${translateX}px)`;
+
     }
 
     renderTaskList();

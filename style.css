@@ -341,6 +341,7 @@ span.label:after {
             transform: translate(-266px, 0px);
     overflow: auto;
     z-index: 900;
+    will-change: transform;
 }
 .open-drawer .drawer {
     -webkit-transform: translate(0, 0px);
