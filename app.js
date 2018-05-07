@@ -707,7 +707,7 @@
         requestAnimationFrame(updateX);
 
         var translateX = Math.min(0, currentX - startX);
-        document.querySelector('#drawer').style.transform = `translateX(${translateX}px)`;
+        document.querySelector('#drawer').style.transform = `translate3d(${translateX}px, 0, 0)`;
 
     }
 
